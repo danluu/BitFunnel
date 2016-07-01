@@ -6,6 +6,7 @@ set(CPPFILES
     DocumentLengthHistogramUnitTest.cpp
     EndToEndTests.cpp
     Placeholder.cpp
+    SliceUnitTest.cpp
 )
 
 set(WINDOWS_CPPFILES
