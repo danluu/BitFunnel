@@ -18,6 +18,8 @@
 
 #include "BitFunnel/Index/Factories.h"
 #include "BitFunnel/Index/IIngestor.h"
+#include "Mocks/EmptyTermTable.h"
+#include "BitFunnel/ITermTable.h"
 #include "Ingestor.h"
 #include "Shard.h"
 #include "Slice.h"
@@ -29,11 +31,28 @@ namespace BitFunnel
 
         TEST(Nothing, Trivial)
         {
+            /*
             std::unique_ptr<IIngestor> ingestor(Factories::CreateIngestor());
             Shard* shard = new Shard(*ingestor, 0u);
             throw shard;
+            */
 
-            // Slice* slice = Slice(nullptr);
+            // pSlice* slice = Slice(nullptr);
+
+            static const size_t c_systemRowCount = 3; // TODO: why is this 3?
+            // static const size_t c_sliceCapacity = 16;
+
+            // 1 row reserved for soft-deleted row.
+            // TODO: what does the above comment mean?
+            static const std::vector<size_t> rowCounts = { c_systemRowCount, 0, 0, 0, 0, 0, 0 };
+            std::shared_ptr<ITermTable const> termTable(new EmptyTermTable(rowCounts));
+
+            // DocumentDataSchema schema;
+            // IndexWrapper index(c_sliceCapacity, termTable, schema, c_blockAllocatorBlockCount);
+            // Shard& shard = index.GetShard();
+
+
+
         }
         /*
         size_t GetBufferSize(DocIndex capacity,
