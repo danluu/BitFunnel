@@ -23,17 +23,23 @@
 #include <iostream>     // TODO: Remove this temporary header.
 
 #include "BitFunnel/Exceptions.h"
+#include "ISliceBufferAllocator.h"
 #include "Shard.h"
 #include "Term.h"       // TODO: Remove this temporary include.
 
 
 namespace BitFunnel
 {
-    Shard::Shard(IIngestor& ingestor, size_t id)
+    Shard::Shard(IIngestor& ingestor,
+                 size_t id,
+                 ISliceBufferAllocator& sliceBufferAllocator,
+                 size_t sliceBufferSize)
         : m_ingestor(ingestor),
           m_id(id),
+          m_sliceBufferAllocator(sliceBufferAllocator),
           m_slice(new Slice(*this)),
-          m_sliceCapacity(16) // TODO: use GetCapacityForByteSize.
+          m_sliceCapacity(16), // TODO: use GetCapacityForByteSize.
+          m_sliceBufferSize(sliceBufferSize)
     {
         m_activeSlice = m_slice.get();
     }
@@ -79,13 +85,26 @@ namespace BitFunnel
     }
 
 
+    void* Shard::AllocateSliceBuffer()
+    {
+        return m_sliceBufferAllocator.Allocate(m_sliceBufferSize);
+    }
+
+
     IIngestor& Shard::GetIndex() const
     {
         return m_ingestor;
     }
 
+
     DocIndex Shard::GetSliceCapacity() const
     {
         return  m_sliceCapacity;
+    }
+
+
+    void Shard::ReleaseSliceBuffer(void* sliceBuffer)
+    {
+        m_sliceBufferAllocator.Release(sliceBuffer);
     }
 }

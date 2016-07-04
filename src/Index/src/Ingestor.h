@@ -32,10 +32,13 @@
 
 namespace BitFunnel
 {
+    class ISliceBufferAllocator;
+
+
     class Ingestor : public IIngestor
     {
     public:
-        Ingestor();
+        Ingestor(ISliceBufferAllocator& sliceBufferAllocator);
 
         // TODO: Remove this temporary method.
         virtual void PrintStatistics() const override;
@@ -109,5 +112,10 @@ namespace BitFunnel
 
         DocumentLengthHistogram m_postingsCount;
 
+        // Allocator used to allocate memory for the slice buffers within
+        // Shards. ISliceBufferAllocator uses IBlockAllocator to allocate
+        // blocks of the same byte size. Slices within Shards will choose the
+        // capacity for which the byte size of the buffer is sufficient.
+        ISliceBufferAllocator& m_sliceBufferAllocator;
     };
 }

@@ -28,23 +28,29 @@
 #include "BitFunnel/Index/IDocument.h"
 #include "DocumentHandleInternal.h"
 #include "Ingestor.h"
+#include "ISliceBufferAllocator.h"
 
 
 namespace BitFunnel
 {
-    std::unique_ptr<IIngestor> Factories::CreateIngestor()
+    std::unique_ptr<IIngestor>
+        Factories::CreateIngestor(ISliceBufferAllocator& sliceBufferAllocator)
     {
-        return std::unique_ptr<IIngestor>(new Ingestor());
+        return std::unique_ptr<IIngestor>(new Ingestor(sliceBufferAllocator));
     }
 
-
-    Ingestor::Ingestor()
-        : m_documentCount(0)
+    Ingestor::Ingestor(ISliceBufferAllocator& sliceBufferAllocator)
+        : m_documentCount(0),
+          m_sliceBufferAllocator(sliceBufferAllocator)
     {
         // Initialize histogram and frequency tables here.
-        m_shards.push_back(std::unique_ptr<Shard>(new Shard(*this, 123)));
+        m_shards.push_back(
+            std::unique_ptr<Shard>(
+                new Shard(*this,
+                          123,
+                          m_sliceBufferAllocator,
+                          m_sliceBufferAllocator.GetSliceBufferSize())));
     }
-
 
     void Ingestor::PrintStatistics() const
     {
