@@ -17,6 +17,7 @@ set(CPPFILES
     RowId.cpp
     Shard.cpp
     Slice.cpp
+    SliceBufferAllocator.cpp
     Term.cpp
 )
 
@@ -40,6 +41,7 @@ set(PRIVATE_HFILES
     ISliceBufferAllocator.h
     Shard.h
     Slice.h
+    SliceBufferAllocator.h
     Term.h
 )
 
