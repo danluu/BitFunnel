@@ -23,7 +23,7 @@
 #include "LoggerInterfaces/Logging.h"
 #include "Slice.h"
 
-#define FAKE_SLICE_CAP 4
+#define FAKE_SLICE_CAP 16
 
 namespace BitFunnel
 {
