@@ -30,9 +30,10 @@ namespace BitFunnel
                 configuration(Factories::CreateConfiguration(ngramSize));
 
             // Create dummy SliceBufferAllocator to satisfy interface.
+            // TODO: fix constants.
             std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator =
                 std::unique_ptr<ISliceBufferAllocator>(
-                    new SliceBufferAllocator(1024, 1024));
+                    new SliceBufferAllocator(512, 512*16));
             const std::unique_ptr<IIngestor> ingestor(
                 Factories::CreateIngestor(*sliceBufferAllocator));
 

@@ -41,6 +41,7 @@ namespace BitFunnel
           m_sliceCapacity(16), // TODO: use GetCapacityForByteSize.
           m_sliceBufferSize(sliceBufferSize)
     {
+        std::cout << "Created shard with m_sliceBufferSize " << m_sliceBufferSize << std::endl;
         m_activeSlice = m_slice.get();
     }
 
@@ -87,6 +88,7 @@ namespace BitFunnel
 
     void* Shard::AllocateSliceBuffer()
     {
+        std::cout << "AllocateSliceBuffer " << m_sliceBufferSize << std::endl;
         return m_sliceBufferAllocator.Allocate(m_sliceBufferSize);
     }
 

@@ -21,17 +21,19 @@
 // THE SOFTWARE.
 
 #include "LoggerInterfaces/Logging.h"
+#include "Shard.h"
 #include "Slice.h"
 
-#define FAKE_SLICE_CAP 16
 
 namespace BitFunnel
 {
     Slice::Slice(Shard& shard)
         : m_shard(shard),
           m_temporaryNextDocIndex(0U),
-          m_capacity(FAKE_SLICE_CAP),
-          m_unallocatedCount(FAKE_SLICE_CAP), // TODO: fix.
+          m_capacity(shard.GetSliceCapacity()),
+          m_refCount(1),
+          m_buffer(shard.AllocateSliceBuffer()),
+          m_unallocatedCount(shard.GetSliceCapacity()),
           m_commitPendingCount(0),
           m_expiredCount(0)
     {
@@ -72,6 +74,17 @@ namespace BitFunnel
     }
 
 
+    /* static */
+    void Slice::DecrementRefCount(Slice* slice)
+    {
+        const unsigned newRefCount = --(slice->m_refCount);
+        if (newRefCount == 0)
+        {
+            // slice->GetShard().RecycleSlice(*slice);
+        }
+    }
+
+
     bool Slice::ExpireDocument()
     {
         std::lock_guard<std::mutex> lock(m_docIndexLock);
@@ -85,6 +98,13 @@ namespace BitFunnel
         m_expiredCount++;
 
         return m_expiredCount == m_capacity;
+    }
+
+
+    /* static */
+    void Slice::IncrementRefCount(Slice* slice)
+    {
+        ++(slice->m_refCount);
     }
 
 

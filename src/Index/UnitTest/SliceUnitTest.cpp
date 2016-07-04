@@ -53,6 +53,7 @@ namespace BitFunnel
             std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator(
                 new TrackingSliceBufferAllocator(sliceBufferSize));
 
+            // TODO: use unique_ptr.
             std::unique_ptr<IIngestor> ingestor(
                 Factories::CreateIngestor(*sliceBufferAllocator));
             Shard* shard = new Shard(*ingestor, 0u, *sliceBufferAllocator, sliceBufferAllocator->GetSliceBufferSize());
@@ -138,60 +139,80 @@ namespace BitFunnel
         }
 
 
-        /*
-           TODO: make this test work after porting ISliceBufferAllocator and
-           TrackingSliceBufferAllocator
+        Slice* FillUpAndExpireSlice(Shard& shard, DocIndex sliceCapacity)
+        {
+            Slice* firstSlice = nullptr;
+            for (DocIndex i = 0; i < sliceCapacity; ++i)
+            {
+                const DocumentHandleInternal handle = shard.AllocateDocument();
+                if (i == 0)
+                {
+                    // Saving the value of the Slice* for subsequent comparison.
+                    firstSlice = handle.GetSlice();
+                    EXPECT_NE(firstSlice, nullptr);
+                }
+
+                // Make sure we are in the same Slice.
+                EXPECT_EQ(firstSlice, handle.GetSlice());
+
+                firstSlice->CommitDocument();
+                firstSlice->ExpireDocument();
+            }
+
+            return firstSlice;
+        }
+
+
         TEST(RefCountTest, Trivial)
         {
-            static const DocIndex c_sliceCapacity = Row::DocumentsInRank0Row(1);
+            // static const DocIndex c_sliceCapacity = Row::DocumentsInRank0Row(1);
+            static const size_t c_sliceCapacity = 16;
 
-            static const std::vector<RowIndex> rowCounts = { 100, 0, 0, 200, 0, 0, 300 };
-            std::shared_ptr<ITermTable const> termTable(new EmptyTermTable(rowCounts));
+            //const size_t sliceBufferSize = GetBufferSize(c_sliceCapacity, rowCounts, schema);
+            static const size_t sliceBufferSize = 1024;
 
-            DocumentDataSchema schema;
-
-            const size_t sliceBufferSize = GetBufferSize(c_sliceCapacity, rowCounts, schema);
             std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator(
                 new TrackingSliceBufferAllocator(sliceBufferSize));
             TrackingSliceBufferAllocator& trackingAllocator
                 = dynamic_cast<TrackingSliceBufferAllocator&>(*sliceBufferAllocator);
 
-            IndexWrapper index(c_sliceCapacity, termTable, schema, sliceBufferAllocator);
-            Shard& shard = index.GetShard();
+            std::unique_ptr<IIngestor> ingestor(
+                Factories::CreateIngestor(*sliceBufferAllocator));
+            std::unique_ptr<Shard> shard = std::unique_ptr<Shard>(new Shard(*ingestor, 0u, *sliceBufferAllocator, sliceBufferAllocator->GetSliceBufferSize()));
 
-            TestEqual(trackingAllocator.GetInUseBuffersCount(), 0);
+            EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 0u);
 
             {
-                Slice* const slice = FillUpAndExpireSlice(shard, c_sliceCapacity);
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+                Slice* const slice = FillUpAndExpireSlice(*shard, c_sliceCapacity);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1u);
 
                 Slice::DecrementRefCount(slice);
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 0);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 0u);
             }
 
             {
-                Slice * const slice = FillUpAndExpireSlice(shard, c_sliceCapacity);
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+                Slice * const slice = FillUpAndExpireSlice(*shard, c_sliceCapacity);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1u);
 
                 // Simulate another reference holder of the slice, such as backup writer.
                 Slice::IncrementRefCount(slice);
 
                 // The slice should not be recycled since there are 2 reference holders.
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1u);
 
                 // Decrement the ref count, at this point there should be 1 ref count and the
                 // Slice must not be recycled.
                 Slice::DecrementRefCount(slice);
 
                 // Slice should still be alive.
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1u);
 
                 // Decrement the last ref count, Slice should be scheduled for recycling.
                 Slice::DecrementRefCount(slice);
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 0);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 0u);
             }
         }
-        */
+
 
         /*
         size_t GetBufferSize(DocIndex capacity,
@@ -214,31 +235,31 @@ namespace BitFunnel
             {
                 // When there are no rows, buffer size is driven only by DocTable.
                 const size_t expectedBufferSize = DocTableDescriptor::GetBufferSize(c_capacityQuanta * 1, schema) + c_sizeOfSlicePtr;
-                TestEqual(GetBufferSize(c_capacityQuanta * 1, { 0, 0, 0, 0, 0, 0, 0 }, schema), expectedBufferSize);
+                EXPECT_EQ(GetBufferSize(c_capacityQuanta * 1, { 0, 0, 0, 0, 0, 0, 0 }, schema), expectedBufferSize);
             }
 
             {
                 // 1 row at rank 0.
                 const size_t expectedBufferSize = DocTableDescriptor::GetBufferSize(c_capacityQuanta * 1, schema) + 4096 / 8 + c_sizeOfSlicePtr;
-                TestEqual(GetBufferSize(c_capacityQuanta * 1, { 1, 0, 0, 0, 0, 0, 0 }, schema), expectedBufferSize);
+                EXPECT_EQ(GetBufferSize(c_capacityQuanta * 1, { 1, 0, 0, 0, 0, 0, 0 }, schema), expectedBufferSize);
             }
 
             {
                 // 10 row at rank 0.
                 const size_t expectedBufferSize = DocTableDescriptor::GetBufferSize(c_capacityQuanta * 1, schema) + 4096 / 8 * 10 + c_sizeOfSlicePtr;
-                TestEqual(GetBufferSize(c_capacityQuanta * 1, { 10, 0, 0, 0, 0, 0, 0 }, schema), expectedBufferSize);
+                EXPECT_EQ(GetBufferSize(c_capacityQuanta * 1, { 10, 0, 0, 0, 0, 0, 0 }, schema), expectedBufferSize);
             }
 
             {
                 // 1 row at rank 0, 10 rows at rank 3.
                 const size_t expectedBufferSize = DocTableDescriptor::GetBufferSize(c_capacityQuanta * 1, schema) + 4096 / 8 + 4096 / 8 / 8 * 10 + c_sizeOfSlicePtr;
-                TestEqual(GetBufferSize(c_capacityQuanta * 1, { 1, 0, 0, 10, 0, 0, 0 }, schema), expectedBufferSize);
+                EXPECT_EQ(GetBufferSize(c_capacityQuanta * 1, { 1, 0, 0, 10, 0, 0, 0 }, schema), expectedBufferSize);
             }
 
             {
                 // 20 rows at rank 6.
                 const size_t expectedBufferSize = DocTableDescriptor::GetBufferSize(c_capacityQuanta * 2, schema) + 2 * 4096 / 8 / 64 * 20 + c_sizeOfSlicePtr;
-                TestEqual(GetBufferSize(c_capacityQuanta * 2, { 0, 0, 0, 0, 0, 0, 20 }, schema), expectedBufferSize);
+                EXPECT_EQ(GetBufferSize(c_capacityQuanta * 2, { 0, 0, 0, 0, 0, 0, 20 }, schema), expectedBufferSize);
             }
         }
 
@@ -258,7 +279,7 @@ namespace BitFunnel
                 }
 
                 // Make sure we are in the same Slice.
-                TestEqual(firstSlice, handle.GetSlice());
+                EXPECT_EQ(firstSlice, handle.GetSlice());
 
                 firstSlice->CommitDocument(handle.GetIndex());
                 firstSlice->ExpireDocument(handle.GetIndex());
@@ -286,36 +307,36 @@ namespace BitFunnel
             IndexWrapper index(c_sliceCapacity, termTable, schema, sliceBufferAllocator);
             Shard& shard = index.GetShard();
 
-            TestEqual(trackingAllocator.GetInUseBuffersCount(), 0);
+            EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 0);
 
             {
                 Slice* const slice = FillUpAndExpireSlice(shard, c_sliceCapacity);
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1);
 
                 Slice::DecrementRefCount(slice);
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 0);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 0);
             }
 
             {
                 Slice * const slice = FillUpAndExpireSlice(shard, c_sliceCapacity);
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1);
 
                 // Simulate another reference holder of the slice, such as backup writer.
                 Slice::IncrementRefCount(slice);
 
                 // The slice should not be recycled since there are 2 reference holders.
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1);
 
                 // Decrement the ref count, at this point there should be 1 ref count and the
                 // Slice must not be recycled.
                 Slice::DecrementRefCount(slice);
 
                 // Slice should still be alive.
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1);
 
                 // Decrement the last ref count, Slice should be scheduled for recycling.
                 Slice::DecrementRefCount(slice);
-                TestEqual(trackingAllocator.GetInUseBuffersCount(), 0);
+                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 0);
             }
         }
 
@@ -336,11 +357,11 @@ namespace BitFunnel
             Slice slice(shard);
             void* sliceBuffer = slice.GetSliceBuffer();
 
-            TestEqual(&slice.GetShard(), &shard);
+            EXPECT_EQ(&slice.GetShard(), &shard);
             TestAssert(sliceBuffer != nullptr);
 
             // Test placement of Slice* in the last bytes of the slice buffer.
-            TestEqual(Slice::GetSliceFromBuffer(sliceBuffer, shard.GetSlicePtrOffset()), &slice);
+            EXPECT_EQ(Slice::GetSliceFromBuffer(sliceBuffer, shard.GetSlicePtrOffset()), &slice);
 
             TermInfo termInfo(ITermTable::GetMatchAllTerm(), *termTable);
             LogAssertB(termInfo.MoveNext());
@@ -352,7 +373,7 @@ namespace BitFunnel
                 unsigned __int8* matchAllRowData = reinterpret_cast<unsigned __int8*>(sliceBuffer) + offset;
                 for (unsigned i = 0; i < shard.GetSliceCapacity() / 8; ++i)
                 {
-                    TestEqual(*matchAllRowData, 0xFF);
+                    EXPECT_EQ(*matchAllRowData, 0xFF);
                     matchAllRowData++;
                 }
             }
@@ -364,7 +385,7 @@ namespace BitFunnel
 
             // DocTable operations.
             slice.GetDocTable().SetDocId(sliceBuffer, c_anyDocIndex, c_anyDocId);
-            TestEqual(slice.GetDocTable().GetDocId(sliceBuffer, c_anyDocIndex), c_anyDocId);
+            EXPECT_EQ(slice.GetDocTable().GetDocId(sliceBuffer, c_anyDocIndex), c_anyDocId);
 
             void* blobValue = slice.GetDocTable().GetVariableSizeBlob(sliceBuffer, c_anyDocIndex, varBlobId0);
             TestAssert(blobValue == nullptr);
@@ -504,7 +525,7 @@ namespace BitFunnel
             Slice slice1(shard, ss);
             void* sliceBuffer1 = slice1.GetSliceBuffer();
 
-            TestEqual(&slice.GetShard(), &slice1.GetShard());
+            EXPECT_EQ(&slice.GetShard(), &slice1.GetShard());
 
             // Make sure new Slice got put in a different buffer.
             TestNotEqual(sliceBuffer, sliceBuffer1);
@@ -516,7 +537,7 @@ namespace BitFunnel
             }
 
             Slice* slicePtrActual = Slice::GetSliceFromBuffer(sliceBuffer1, shard.GetSlicePtrOffset());
-            TestEqual(&slice1, slicePtrActual);
+            EXPECT_EQ(&slice1, slicePtrActual);
 
             {
                 DocTableDescriptor const & docTable = slice1.GetDocTable();
@@ -527,7 +548,7 @@ namespace BitFunnel
                         RowTableDescriptor const & rowTable = slice.GetRowTable(r);
                         for (RowIndex row = 0; row < rowCounts[r]; ++row)
                         {
-                            TestEqual(rowTable.GetBit(sliceBuffer, row, i),
+                            EXPECT_EQ(rowTable.GetBit(sliceBuffer, row, i),
                                       rowTable.GetBit(sliceBuffer1, row, i));
                         }
                     }
@@ -542,10 +563,10 @@ namespace BitFunnel
                     }
                     else
                     {
-                        TestEqual(memcmp(varBlob0Slice0, varBlob0Slice1, blobSize), 0);
+                        EXPECT_EQ(memcmp(varBlob0Slice0, varBlob0Slice1, blobSize), 0);
                     }
 
-                    TestEqual(memcmp(docTable.GetFixedSizeBlob(sliceBuffer, i, fixedBlobId0),
+                    EXPECT_EQ(memcmp(docTable.GetFixedSizeBlob(sliceBuffer, i, fixedBlobId0),
                                      docTable.GetFixedSizeBlob(sliceBuffer1, i, fixedBlobId0),
                                      c_fixedBlob0Size), 0);
                 }

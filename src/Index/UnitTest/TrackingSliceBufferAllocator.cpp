@@ -1,3 +1,4 @@
+#include <iostream> // TODO: remove.
 #include <mutex>
 #include <unordered_set>
 
@@ -11,6 +12,7 @@ namespace BitFunnel
     TrackingSliceBufferAllocator::TrackingSliceBufferAllocator(size_t blockSize)
         : m_blockSize(blockSize)
     {
+        std::cout << "-----TrackingSliceBufferAllocator constructor.\n";
     }
 
 
@@ -26,6 +28,7 @@ namespace BitFunnel
     {
         std::lock_guard<std::mutex> lock(m_lock);
 
+        std::cout << "-----TrackingSliceBufferAllocator::Allocate.\n";
         EXPECT_EQ(byteSize, m_blockSize);
 
         void* sliceBuffer = malloc(byteSize);
