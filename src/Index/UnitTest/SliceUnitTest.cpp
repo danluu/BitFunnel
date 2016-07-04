@@ -21,6 +21,7 @@
 #include "Mocks/EmptyTermTable.h"
 #include "BitFunnel/ITermTable.h"
 #include "Ingestor.h"
+#include "ISliceBufferAllocator.h"
 #include "Shard.h"
 #include "Slice.h"
 
@@ -39,12 +40,12 @@ namespace BitFunnel
 
             // pSlice* slice = Slice(nullptr);
 
-            static const size_t c_systemRowCount = 3; // TODO: why is this 3?
+            // static const size_t c_systemRowCount = 3; // TODO: why is this 3?
 
             // 1 row reserved for soft-deleted row.
             // TODO: what does the above comment mean?
-            static const std::vector<size_t> rowCounts = { c_systemRowCount, 0, 0, 0, 0, 0, 0 };
-            std::shared_ptr<ITermTable const> termTable(new EmptyTermTable(rowCounts));
+            // static const std::vector<size_t> rowCounts = { c_systemRowCount, 0, 0, 0, 0, 0, 0 };
+            // std::shared_ptr<ITermTable const> termTable(new EmptyTermTable(rowCounts));
 
             std::unique_ptr<IIngestor> ingestor(Factories::CreateIngestor());
             Shard* shard = new Shard(*ingestor, 0u);
@@ -127,10 +128,64 @@ namespace BitFunnel
             // static const size_t c_blockAllocatorBlockCount = 32; // TODO: what should this value be?
             // IndexWrapper index(c_sliceCapacity, termTable, schema, c_blockAllocatorBlockCount);
             // Shard& shard = index.GetShard();
-
-
-
         }
+
+
+        /*
+           TODO: make this test work after porting ISliceBufferAllocator and
+           TrackingSliceBufferAllocator
+        TEST(RefCountTest, Trivial)
+        {
+            static const DocIndex c_sliceCapacity = Row::DocumentsInRank0Row(1);
+
+            static const std::vector<RowIndex> rowCounts = { 100, 0, 0, 200, 0, 0, 300 };
+            std::shared_ptr<ITermTable const> termTable(new EmptyTermTable(rowCounts));
+
+            DocumentDataSchema schema;
+
+            const size_t sliceBufferSize = GetBufferSize(c_sliceCapacity, rowCounts, schema);
+            std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator(
+                new TrackingSliceBufferAllocator(sliceBufferSize));
+            TrackingSliceBufferAllocator& trackingAllocator
+                = dynamic_cast<TrackingSliceBufferAllocator&>(*sliceBufferAllocator);
+
+            IndexWrapper index(c_sliceCapacity, termTable, schema, sliceBufferAllocator);
+            Shard& shard = index.GetShard();
+
+            TestEqual(trackingAllocator.GetInUseBuffersCount(), 0);
+
+            {
+                Slice* const slice = FillUpAndExpireSlice(shard, c_sliceCapacity);
+                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+
+                Slice::DecrementRefCount(slice);
+                TestEqual(trackingAllocator.GetInUseBuffersCount(), 0);
+            }
+
+            {
+                Slice * const slice = FillUpAndExpireSlice(shard, c_sliceCapacity);
+                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+
+                // Simulate another reference holder of the slice, such as backup writer.
+                Slice::IncrementRefCount(slice);
+
+                // The slice should not be recycled since there are 2 reference holders.
+                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+
+                // Decrement the ref count, at this point there should be 1 ref count and the
+                // Slice must not be recycled.
+                Slice::DecrementRefCount(slice);
+
+                // Slice should still be alive.
+                TestEqual(trackingAllocator.GetInUseBuffersCount(), 1);
+
+                // Decrement the last ref count, Slice should be scheduled for recycling.
+                Slice::DecrementRefCount(slice);
+                TestEqual(trackingAllocator.GetInUseBuffersCount(), 0);
+            }
+        }
+        */
+
         /*
         size_t GetBufferSize(DocIndex capacity,
                              std::vector<RowIndex> const & rowCounts,
