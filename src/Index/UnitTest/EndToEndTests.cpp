@@ -7,6 +7,8 @@
 #include "ChunkEnumerator.h"
 #include "Configuration.h"
 #include "Ingestor.h"
+#include "ISliceBufferAllocator.h"
+#include "SliceBufferAllocator.h"
 // #include "DocumentLengthHistogram.h"
 
 
@@ -66,7 +68,11 @@ namespace BitFunnel
                 "/tmp/chunks/manifest.txt");
 
             Configuration config(1);
-            Ingestor ingestor;
+            // Create dummy SliceBufferAllocator to satisfy interface.
+            std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator =
+                std::unique_ptr<ISliceBufferAllocator>(
+                    new SliceBufferAllocator(0, 0));
+            Ingestor ingestor(*sliceBufferAllocator);
             ChunkEnumerator chunkEnumerator(filePaths, config, ingestor, 1);
             chunkEnumerator.WaitForCompletion();
         }

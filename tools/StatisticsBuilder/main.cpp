@@ -8,6 +8,7 @@
 #include "BitFunnel/Index/IIngestor.h"
 #include "BitFunnel/Index/IngestChunks.h"
 #include "CmdLineParser/CmdLineParser.h"
+#include "../src/Index/src/SliceBufferAllocator.h" // TODO: what to do with this?
 
 
 namespace BitFunnel
@@ -35,7 +36,13 @@ namespace BitFunnel
             << std::endl;
         std::vector<std::string> filePaths = ReadLines(chunkListFileName);
 
-        std::unique_ptr<IIngestor> ingestor(Factories::CreateIngestor());
+        // Create dummy SliceBufferAllocator to satisfy interface.
+        std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator =
+            std::unique_ptr<ISliceBufferAllocator>(
+                 new SliceBufferAllocator(0, 0));
+
+        std::unique_ptr<IIngestor>
+            ingestor(Factories::CreateIngestor(*sliceBufferAllocator));
 
         // Arbitrary maxGramSize that is greater than 1. For initial tests.
         // TODO: Choose correct maxGramSize.

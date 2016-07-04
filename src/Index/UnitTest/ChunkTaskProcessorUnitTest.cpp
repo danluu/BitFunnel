@@ -8,6 +8,7 @@
 #include "BitFunnel/Index/IConfiguration.h"
 #include "BitFunnel/Index/IIngestor.h"
 #include "ChunkTaskProcessor.h"
+#include "SliceBufferAllocator.h"
 #include "gtest/gtest.h"
 
 
@@ -27,8 +28,13 @@ namespace BitFunnel
         {
             const std::unique_ptr<IConfiguration>
                 configuration(Factories::CreateConfiguration(ngramSize));
+
+            // Create dummy SliceBufferAllocator to satisfy interface.
+            std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator =
+                std::unique_ptr<ISliceBufferAllocator>(
+                    new SliceBufferAllocator(0, 0));
             const std::unique_ptr<IIngestor> ingestor(
-                Factories::CreateIngestor());
+                Factories::CreateIngestor(*sliceBufferAllocator));
 
             ChunkTaskProcessor processor(filePaths, *configuration, *ingestor);
 

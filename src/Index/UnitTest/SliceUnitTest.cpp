@@ -24,6 +24,7 @@
 #include "ISliceBufferAllocator.h"
 #include "Shard.h"
 #include "Slice.h"
+#include "TrackingSliceBufferAllocator.h"
 
 namespace BitFunnel
 {
@@ -47,8 +48,14 @@ namespace BitFunnel
             // static const std::vector<size_t> rowCounts = { c_systemRowCount, 0, 0, 0, 0, 0, 0 };
             // std::shared_ptr<ITermTable const> termTable(new EmptyTermTable(rowCounts));
 
-            std::unique_ptr<IIngestor> ingestor(Factories::CreateIngestor());
-            Shard* shard = new Shard(*ingestor, 0u);
+            // TODO: figure out what this should be.
+            static const size_t sliceBufferSize = 1024;
+            std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator(
+                new TrackingSliceBufferAllocator(sliceBufferSize));
+
+            std::unique_ptr<IIngestor> ingestor(
+                Factories::CreateIngestor(*sliceBufferAllocator));
+            Shard* shard = new Shard(*ingestor, 0u, *sliceBufferAllocator, sliceBufferAllocator->GetSliceBufferSize());
 
             static const size_t c_sliceCapacity = 16;
 
