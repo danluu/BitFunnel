@@ -32,7 +32,7 @@ namespace BitFunnel
             // Create dummy SliceBufferAllocator to satisfy interface.
             std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator =
                 std::unique_ptr<ISliceBufferAllocator>(
-                    new SliceBufferAllocator(0, 0));
+                    new SliceBufferAllocator(1024, 1024));
             const std::unique_ptr<IIngestor> ingestor(
                 Factories::CreateIngestor(*sliceBufferAllocator));
 

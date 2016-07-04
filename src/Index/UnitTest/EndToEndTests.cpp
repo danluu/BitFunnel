@@ -71,7 +71,7 @@ namespace BitFunnel
             // Create dummy SliceBufferAllocator to satisfy interface.
             std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator =
                 std::unique_ptr<ISliceBufferAllocator>(
-                    new SliceBufferAllocator(0, 0));
+                    new SliceBufferAllocator(1024, 1024));
             Ingestor ingestor(*sliceBufferAllocator);
             ChunkEnumerator chunkEnumerator(filePaths, config, ingestor, 1);
             chunkEnumerator.WaitForCompletion();
