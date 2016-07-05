@@ -12,7 +12,7 @@ namespace BitFunnel
     TrackingSliceBufferAllocator::TrackingSliceBufferAllocator(size_t blockSize)
         : m_blockSize(blockSize)
     {
-        std::cout << "-----TrackingSliceBufferAllocator constructor.\n";
+        std::cout << "-----TrackingSliceBufferAllocator constructor " << blockSize << std::endl;
     }
 
 
@@ -28,7 +28,7 @@ namespace BitFunnel
     {
         std::lock_guard<std::mutex> lock(m_lock);
 
-        std::cout << "-----TrackingSliceBufferAllocator::Allocate.\n";
+        std::cout << "-----TrackingSliceBufferAllocator::Allocate " << byteSize << std::endl;
         EXPECT_EQ(byteSize, m_blockSize);
 
         void* sliceBuffer = malloc(byteSize);

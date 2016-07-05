@@ -30,6 +30,7 @@
 namespace BitFunnel
 {
     class IDocument;
+    class Shard;
 
     // BITFUNNELTYPES
     // The documents in the BitFunnel index can be grouped into conceptual
@@ -94,6 +95,10 @@ namespace BitFunnel
         // Returns the size in bytes of the capacity of row tables in the
         // entire ingestion index.
         virtual size_t GetUsedCapacityInBytes() const = 0;
+
+        // Returns a number of Shards and a Shard with the given ShardId.
+        virtual size_t GetShardCount() const = 0;
+        virtual Shard& GetShard(size_t shard) const = 0;
 
         // Shuts down the index and releases resources allocated to it.
         virtual void Shutdown() = 0;

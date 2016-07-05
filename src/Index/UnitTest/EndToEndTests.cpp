@@ -72,7 +72,7 @@ namespace BitFunnel
             // TODO: fix constants.
             std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator =
                 std::unique_ptr<ISliceBufferAllocator>(
-                    new SliceBufferAllocator(512, 512*16));
+                    new SliceBufferAllocator(256, 256*16));
             const std::unique_ptr<IIngestor> ingestor =
                 std::unique_ptr<IIngestor>(new Ingestor(*sliceBufferAllocator));
             ChunkEnumerator chunkEnumerator(filePaths, config, *ingestor, 1);

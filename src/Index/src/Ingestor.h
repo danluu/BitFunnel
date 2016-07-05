@@ -79,6 +79,10 @@ namespace BitFunnel
         // entire ingestion index.
         virtual size_t GetUsedCapacityInBytes() const override;
 
+        // Returns a number of Shards and a Shard with the given ShardId.
+        virtual size_t GetShardCount() const override;
+        virtual Shard& GetShard(size_t shard) const override;
+
         // Shuts down the index and releases resources allocated to it.
         virtual void Shutdown() override;
 

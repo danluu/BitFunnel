@@ -81,6 +81,18 @@ namespace BitFunnel
     }
 
 
+    size_t Ingestor::GetShardCount() const
+    {
+        return m_shards.size();
+    }
+
+
+    Shard& Ingestor::GetShard(size_t shard) const
+    {
+        return *(m_shards[shard]);
+    }
+
+
     bool Ingestor::Delete(DocId /*id*/)
     {
         throw NotImplemented();

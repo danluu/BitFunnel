@@ -33,7 +33,7 @@ namespace BitFunnel
             // TODO: fix constants.
             std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator =
                 std::unique_ptr<ISliceBufferAllocator>(
-                    new SliceBufferAllocator(512, 512*16));
+                    new SliceBufferAllocator(384, 384*16));
             const std::unique_ptr<IIngestor> ingestor(
                 Factories::CreateIngestor(*sliceBufferAllocator));
 
