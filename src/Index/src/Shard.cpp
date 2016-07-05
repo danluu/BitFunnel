@@ -38,6 +38,7 @@ namespace BitFunnel
         : m_ingestor(ingestor),
           m_id(id),
           m_sliceBufferAllocator(sliceBufferAllocator),
+          m_activeSlice(nullptr),
           // m_slice(new Slice(*this)),
           m_sliceBuffers(new std::vector<void*>()),
           m_sliceCapacity(16), // TODO: use GetCapacityForByteSize.
