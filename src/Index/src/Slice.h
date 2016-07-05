@@ -145,7 +145,7 @@ namespace BitFunnel
         // Returns the slice buffer associated with this Slice. Slice buffer
         // is allocated by the Slice using ISliceBufferAllocator from its
         // parent Shard.
-        //void* GetSliceBuffer() const;
+        void* GetSliceBuffer() const;
 
         // Returns the shard which owns this slice.
         // DESIGN NOTE: Shard is required to get access to shared objects at either

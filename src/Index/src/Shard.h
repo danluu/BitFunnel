@@ -209,7 +209,7 @@ namespace BitFunnel
         //   Slice* newSlice = new Slice(*this);
         //   newSlices.push_back(newSlice->GetBuffer());
         //   swap newSlices and m_sliceBuffers, schedule newSlices for recycling.
-        //void CreateNewActiveSlice();
+        void CreateNewActiveSlice();
 
         // Parent IngestionIndex that contains this Shard.
         IIngestor& m_ingestor;
@@ -241,7 +241,6 @@ namespace BitFunnel
         // Initially set to nullptr. First call to AllocateDocument() will
         // allocate a new Slice via CreateNewActiveSlice().
         Slice* m_activeSlice;
-        std::unique_ptr<Slice> m_slice;
 
         // Vector of pointers to slice buffers.
         //
@@ -254,10 +253,11 @@ namespace BitFunnel
         //
         // DESIGN NOTE: We store a vector of void*, instead of Slice* in order
         // to provide an array of Slice buffer pointers to the matcher.
+        // TODO: add a more detailed comment to the above design note.
         //
         // TODO: make this std::vector<void*> const * when a thread safe swap
         // of vectors is implemented.
-        //std::vector<void*>* m_sliceBuffers;
+        std::atomic<std::vector<void*>*> m_sliceBuffers;
 
         // Capacity of a Slice. All Slices in the shard have the same capacity.
         const DocIndex m_sliceCapacity;

@@ -24,6 +24,7 @@
 
 #include "BitFunnel/Exceptions.h"
 #include "ISliceBufferAllocator.h"
+#include "LoggerInterfaces/Logging.h"
 #include "Shard.h"
 #include "Term.h"       // TODO: Remove this temporary include.
 
@@ -37,12 +38,13 @@ namespace BitFunnel
         : m_ingestor(ingestor),
           m_id(id),
           m_sliceBufferAllocator(sliceBufferAllocator),
-          m_slice(new Slice(*this)),
+          // m_slice(new Slice(*this)),
+          m_sliceBuffers(new std::vector<void*>()),
           m_sliceCapacity(16), // TODO: use GetCapacityForByteSize.
           m_sliceBufferSize(sliceBufferSize)
     {
         std::cout << "Shard constructor with m_sliceBufferSize " << m_sliceBufferSize << std::endl;
-        m_activeSlice = m_slice.get();
+        // m_activeSlice = m_slice.get();
     }
 
 
@@ -78,9 +80,12 @@ namespace BitFunnel
     DocumentHandleInternal Shard::AllocateDocument()
     {
         DocIndex index;
-        if (!m_activeSlice->TryAllocateDocument(index))
+        if (m_activeSlice == nullptr || !m_activeSlice->TryAllocateDocument(index))
         {
-            throw FatalError("In this temporary code, TryAllocateDocument() should always succeed.");
+            CreateNewActiveSlice();
+
+            LogAssertB(m_activeSlice->TryAllocateDocument(index),
+                       "Newly allocated slice has no space.");
         }
         return DocumentHandleInternal(m_activeSlice, index);
     }
@@ -90,6 +95,40 @@ namespace BitFunnel
     {
         std::cout << "AllocateSliceBuffer " << m_sliceBufferSize << std::endl;
         return m_sliceBufferAllocator.Allocate(m_sliceBufferSize);
+    }
+
+    // Must be called with m_slicesLock held.
+    void Shard::CreateNewActiveSlice()
+    {
+        Slice* newSlice = new Slice(*this);
+
+        // TODO: recycle oldSlice.
+        // std::vector<void*>* oldSlice = m_sliceBuffers;
+        std::vector<void*>* const newSlices = new std::vector<void*>(*m_sliceBuffers);
+        newSlices->push_back(newSlice->GetSliceBuffer());
+
+        // LogB(Logging::Info,
+        //      "Shard",
+        //      "Create new slice for shard %u. New slice count is %u.",
+        //      m_id,
+        //      newSlices->size());
+
+        // Interlocked operation is used because query threads do not take the lock.
+        // For query threads, the operation of swapping the list of slice buffers
+        // must be atomic.
+        m_sliceBuffers = newSlices;
+
+        // newSlices now contains the old list of slice buffers which needs to
+        // be scheduled for recycling.
+
+        m_activeSlice = newSlice;
+
+        // TODO: think if this can be done outside of the lock.
+
+        // TODO: implement recycler.
+        // std::unique_ptr<IRecyclable> recyclable(
+        //                                         new SliceListChangeRecyclable(nullptr, oldSlices, GetIndex().GetTokenManager()));
+        // GetIndex().GetRecycler().ScheduleRecyling(recyclable);
     }
 
 

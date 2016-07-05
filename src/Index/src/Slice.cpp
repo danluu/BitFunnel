@@ -116,4 +116,10 @@ namespace BitFunnel
 
         return m_expiredCount == m_capacity;
     }
+
+
+    void* Slice::GetSliceBuffer() const
+    {
+        return m_buffer;
+    }
 }
