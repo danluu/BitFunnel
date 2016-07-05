@@ -43,6 +43,8 @@ namespace BitFunnel
         : m_documentCount(0),
           m_sliceBufferAllocator(sliceBufferAllocator)
     {
+        std::cout << "Ingestor constructor.\n";
+
         // Initialize histogram and frequency tables here.
         m_shards.push_back(
             std::unique_ptr<Shard>(
@@ -50,6 +52,8 @@ namespace BitFunnel
                           123,
                           m_sliceBufferAllocator,
                           m_sliceBufferAllocator.GetSliceBufferSize())));
+
+        std::cout << "Finished Ingestor constructor.\n";
     }
 
     void Ingestor::PrintStatistics() const
