@@ -79,6 +79,7 @@ namespace BitFunnel
 
     DocumentHandleInternal Shard::AllocateDocument()
     {
+        std::lock_guard<std::mutex> lock(m_slicesLock);
         DocIndex index;
         if (m_activeSlice == nullptr || !m_activeSlice->TryAllocateDocument(index))
         {

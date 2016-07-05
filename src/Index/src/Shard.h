@@ -235,7 +235,7 @@ namespace BitFunnel
         // AllocateDocument method.
         // This lock is used in const member functions, as a result, it is
         // declared as mutable.
-        //mutable Mutex m_slicesLock;
+        mutable std::mutex m_slicesLock;
 
         // Pointer to the current Slice where documents are being ingested to.
         // Initially set to nullptr. First call to AllocateDocument() will
