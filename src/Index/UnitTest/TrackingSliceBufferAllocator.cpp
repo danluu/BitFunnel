@@ -47,6 +47,7 @@ namespace BitFunnel
     {
         std::lock_guard<std::mutex> lock(m_lock);
 
+        std::cout << "-----TrackingSliceBufferAllocator::Release\n";
         auto it = m_allocatedBuffers.find(buffer);
         EXPECT_NE(it, m_allocatedBuffers.end());
 

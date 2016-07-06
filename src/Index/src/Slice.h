@@ -140,7 +140,7 @@ namespace BitFunnel
 
         // Releases all heap-allocated data blobs, returns the slice buffer
         // back to its allocator and destroys the Slice.
-        //~Slice();
+        ~Slice();
 
         // Returns the slice buffer associated with this Slice. Slice buffer
         // is allocated by the Slice using ISliceBufferAllocator from its

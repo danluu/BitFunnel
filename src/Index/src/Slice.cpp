@@ -20,6 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+
+#include <iostream>
+
 #include "LoggerInterfaces/Logging.h"
 #include "Shard.h"
 #include "Slice.h"
@@ -43,6 +46,20 @@ namespace BitFunnel
     Shard& Slice::GetShard() const
     {
         return m_shard;
+    }
+
+
+    Slice::~Slice()
+    {
+        try
+        {
+            // GetDocTable().Cleanup(m_buffer);
+            m_shard.ReleaseSliceBuffer(m_buffer);
+        }
+        catch (...)
+        {
+            LogB(Logging::Error, "Slice", "Exception caught in Slice::~Slice()","");
+        }
     }
 
 
@@ -78,6 +95,7 @@ namespace BitFunnel
     void Slice::DecrementRefCount(Slice* slice)
     {
         const unsigned newRefCount = --(slice->m_refCount);
+        std::cout << "DecrementRefCount " << newRefCount << std::endl;
         if (newRefCount == 0)
         {
             slice->GetShard().RecycleSlice(*slice);

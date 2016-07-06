@@ -188,11 +188,11 @@ namespace BitFunnel
 
             Shard& shard = ingestor->GetShard(0);
 
-            EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 0U);
+            EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 0u);
 
             {
                 Slice* const slice = FillUpAndExpireSlice(shard, c_sliceCapacity);
-                EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 1U);
+                EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 1u);
 
                 Slice::DecrementRefCount(slice);
                 EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 0u);
@@ -200,25 +200,24 @@ namespace BitFunnel
 
             {
                 Slice * const slice = FillUpAndExpireSlice(shard, c_sliceCapacity);
-                // TODO: implement Recycler.
-                // EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 1U);
+                EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 1u);
 
                 // Simulate another reference holder of the slice, such as backup writer.
                 Slice::IncrementRefCount(slice);
 
-                // // The slice should not be recycled since there are 2 reference holders.
-                // EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 1u);
+                // The slice should not be recycled since there are 2 reference holders.
+                EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 1u);
 
-                // // Decrement the ref count, at this point there should be 1 ref count and the
-                // // Slice must not be recycled.
-                // Slice::DecrementRefCount(slice);
+                // Decrement the ref count, at this point there should be 1 ref count and the
+                // Slice must not be recycled.
+                Slice::DecrementRefCount(slice);
 
-                // // Slice should still be alive.
-                // EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1u);
+                // Slice should still be alive.
+                EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 1u);
 
-                // // Decrement the last ref count, Slice should be scheduled for recycling.
-                // Slice::DecrementRefCount(slice);
-                // EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 0u);
+                // Decrement the last ref count, Slice should be scheduled for recycling.
+                Slice::DecrementRefCount(slice);
+                EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 0u);
             }
 
             ingestor->Shutdown();
