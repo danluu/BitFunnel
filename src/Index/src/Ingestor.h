@@ -26,6 +26,7 @@
 #include <stddef.h>                     // size_t template parameter.
 
 #include "BitFunnel/Index/IIngestor.h"  // Inherits from IIngestor.
+#include "BitFunnel/Token.h"
 #include "DocumentLengthHistogram.h"    // Embeds DocumentLengthHistogram.
 #include "Shard.h"                      // std::unique_ptr template parameter.
 
