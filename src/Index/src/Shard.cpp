@@ -23,8 +23,12 @@
 #include <iostream>     // TODO: Remove this temporary header.
 
 #include "BitFunnel/Exceptions.h"
+#include "BitFunnel/Index/IIngestor.h"
+#include "IRecyclable.h"
+#include "IRecycler.h"
 #include "ISliceBufferAllocator.h"
 #include "LoggerInterfaces/Logging.h"
+#include "Recycler.h"
 #include "Shard.h"
 #include "Term.h"       // TODO: Remove this temporary include.
 
@@ -145,6 +149,65 @@ namespace BitFunnel
         return  m_sliceCapacity;
     }
 
+
+    void Shard::RecycleSlice(Slice& slice)
+    {
+        std::vector<void*>* oldSlices = nullptr;
+        size_t newSliceCount;
+
+        {
+            std::lock_guard<std::mutex> lock(m_slicesLock);
+
+            if (!slice.IsExpired())
+            {
+                throw std::runtime_error("Slice being recycled has not been fully expired");
+            }
+
+            std::vector<void*>* const newSlices = new std::vector<void*>();
+            newSlices->reserve(m_sliceBuffers.load()->size() - 1);
+
+            for (const auto it : *m_sliceBuffers)
+            {
+                if (it != slice.GetSliceBuffer())
+                {
+                    newSlices->push_back(it);
+                }
+            }
+
+            if (m_sliceBuffers.load()->size() != newSlices->size() + 1)
+            {
+                throw std::runtime_error("Slice buffer to be removed is not found in the active slice buffers list");
+            }
+
+            newSliceCount = newSlices->size();
+
+            oldSlices = m_sliceBuffers.load();
+            m_sliceBuffers = newSlices;
+
+            if (m_activeSlice == &slice)
+            {
+                // If all of the above validations are true, then this was the
+                // last Slice in the Shard.
+                m_activeSlice = nullptr;
+            }
+        }
+
+        // Logging outside of the lock.
+        LogB(Logging::Info,
+             "Shard",
+             "Recycle slice for shard %u. New slice count is %u.",
+             m_id,
+             newSliceCount);
+
+        // Scheduling the Slice and the old list of slice buffers can be
+        // done outside of the lock.
+        std::unique_ptr<IRecyclable>
+            recyclableSliceList(new SliceListChangeRecyclable(&slice,
+                                                              oldSlices,
+                                                              GetIndex().GetTokenManager()));
+
+        GetIndex().GetRecycler().ScheduleRecyling(recyclableSliceList);
+    }
 
     void Shard::ReleaseSliceBuffer(void* sliceBuffer)
     {

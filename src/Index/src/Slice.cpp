@@ -80,7 +80,7 @@ namespace BitFunnel
         const unsigned newRefCount = --(slice->m_refCount);
         if (newRefCount == 0)
         {
-            // slice->GetShard().RecycleSlice(*slice);
+            slice->GetShard().RecycleSlice(*slice);
         }
     }
 

@@ -30,6 +30,8 @@
 namespace BitFunnel
 {
     class IDocument;
+    class IRecycler;
+    class ITokenManager;
     class Shard;
 
     // BITFUNNELTYPES
@@ -99,6 +101,10 @@ namespace BitFunnel
         // Returns a number of Shards and a Shard with the given ShardId.
         virtual size_t GetShardCount() const = 0;
         virtual Shard& GetShard(size_t shard) const = 0;
+
+        virtual IRecycler& GetRecycler() const = 0;
+
+        virtual ITokenManager& GetTokenManager() const = 0;
 
         // Shuts down the index and releases resources allocated to it.
         virtual void Shutdown() = 0;

@@ -33,13 +33,14 @@
 
 namespace BitFunnel
 {
+    class IRecycler;
     class ISliceBufferAllocator;
 
 
     class Ingestor : public IIngestor
     {
     public:
-        Ingestor(ISliceBufferAllocator& sliceBufferAllocator);
+        Ingestor(IRecycler& recycle, ISliceBufferAllocator& sliceBufferAllocator);
 
         // TODO: Remove this temporary method.
         virtual void PrintStatistics() const override;
@@ -84,6 +85,10 @@ namespace BitFunnel
         virtual size_t GetShardCount() const override;
         virtual Shard& GetShard(size_t shard) const override;
 
+        virtual IRecycler& GetRecycler() const override;
+
+        virtual ITokenManager& GetTokenManager() const override;
+
         // Shuts down the index and releases resources allocated to it.
         virtual void Shutdown() override;
 
@@ -109,11 +114,15 @@ namespace BitFunnel
         virtual void ExpireGroup(GroupId groupId) override;
 
     private:
+        IRecycler& m_recycler;
+
         // TODO: Replace these tempoary statistics variables with document
         // length hash table and term frequency tables.
         std::atomic<size_t> m_documentCount;
 
         std::vector<std::unique_ptr<Shard>> m_shards;
+
+        std::unique_ptr<ITokenManager> m_tokenManager;
 
         DocumentLengthHistogram m_postingsCount;
 

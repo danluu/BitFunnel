@@ -26,21 +26,27 @@
 #include "BitFunnel/Exceptions.h"
 #include "BitFunnel/Index/Factories.h"
 #include "BitFunnel/Index/IDocument.h"
+#include "BitFunnel/Utilities/Factories.h"
 #include "DocumentHandleInternal.h"
 #include "Ingestor.h"
+#include "IRecycler.h"
 #include "ISliceBufferAllocator.h"
 
 
 namespace BitFunnel
 {
     std::unique_ptr<IIngestor>
-        Factories::CreateIngestor(ISliceBufferAllocator& sliceBufferAllocator)
+    Factories::CreateIngestor(IRecycler& recycler,
+                              ISliceBufferAllocator& sliceBufferAllocator)
     {
-        return std::unique_ptr<IIngestor>(new Ingestor(sliceBufferAllocator));
+        return std::unique_ptr<IIngestor>(new Ingestor(recycler,
+                                                       sliceBufferAllocator));
     }
 
-    Ingestor::Ingestor(ISliceBufferAllocator& sliceBufferAllocator)
-        : m_documentCount(0),
+    Ingestor::Ingestor(IRecycler& recycler, ISliceBufferAllocator& sliceBufferAllocator)
+        : m_recycler(recycler),
+          m_documentCount(0),
+          m_tokenManager(Factories::CreateTokenManager()),
           m_sliceBufferAllocator(sliceBufferAllocator)
     {
         std::cout << "Ingestor constructor.\n";
@@ -85,6 +91,12 @@ namespace BitFunnel
     }
 
 
+    IRecycler& Ingestor::GetRecycler() const
+    {
+        return m_recycler;
+    }
+
+
     size_t Ingestor::GetShardCount() const
     {
         return m_shards.size();
@@ -94,6 +106,12 @@ namespace BitFunnel
     Shard& Ingestor::GetShard(size_t shard) const
     {
         return *(m_shards[shard]);
+    }
+
+
+    ITokenManager& Ingestor::GetTokenManager() const
+    {
+        return *m_tokenManager;
     }
 
 
@@ -123,7 +141,7 @@ namespace BitFunnel
 
     void Ingestor::Shutdown()
     {
-        throw NotImplemented();
+        m_tokenManager->Shutdown();
     }
 
 

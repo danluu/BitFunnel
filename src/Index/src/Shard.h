@@ -147,7 +147,7 @@ namespace BitFunnel
         // Throws if the slice buffer being removed corresponds to a Slice
         // which is not fully expired. A slice which is removed, along with the
         // old copy of the vector of slices, is scheduled for recycling.
-        //void RecycleSlice(Slice& slice);
+        void RecycleSlice(Slice& slice);
 
         // Returns the IngestionIndex that owns the Shard.
         IIngestor& GetIndex() const;

@@ -21,7 +21,9 @@
 #include "Mocks/EmptyTermTable.h"
 #include "BitFunnel/ITermTable.h"
 #include "Ingestor.h"
+#include "IRecycler.h"
 #include "ISliceBufferAllocator.h"
+#include "Recycler.h"
 #include "Shard.h"
 #include "Slice.h"
 #include "TrackingSliceBufferAllocator.h"
@@ -47,15 +49,17 @@ namespace BitFunnel
             // TODO: what does the above comment mean?
             // static const std::vector<size_t> rowCounts = { c_systemRowCount, 0, 0, 0, 0, 0, 0 };
             // std::shared_ptr<ITermTable const> termTable(new EmptyTermTable(rowCounts));
+            std::unique_ptr<IRecycler> recycler =
+                std::unique_ptr<IRecycler>(new Recycler());
 
             // TODO: figure out what this should be.
             static const size_t sliceBufferSize = 32;
             std::unique_ptr<ISliceBufferAllocator> trackingAllocator(
                 new TrackingSliceBufferAllocator(sliceBufferSize));
 
-            // TODO: use unique_ptr.
-            std::unique_ptr<IIngestor> ingestor(
-                Factories::CreateIngestor(*trackingAllocator));
+            std::unique_ptr<IIngestor> ingestor(Factories::CreateIngestor
+                                                (*recycler,
+                                                 *trackingAllocator));
             Shard& shard = ingestor->GetShard(0);
 
             static const size_t c_sliceCapacity = 16;
@@ -67,7 +71,7 @@ namespace BitFunnel
                 EXPECT_FALSE(slice.IsExpired());
 
 
-                std::unordered_set<DocIndex> allocatedDocIndexes; // TODO: what is this set for?
+                std::unordered_set<DocIndex> allocatedDocIndexes;
                 for (DocIndex i = 0; i < c_sliceCapacity; ++i)
                 {
                     DocIndex index;
@@ -136,6 +140,8 @@ namespace BitFunnel
             // static const size_t c_blockAllocatorBlockCount = 32; // TODO: what should this value be?
             // IndexWrapper index(c_sliceCapacity, termTable, schema, c_blockAllocatorBlockCount);
             // Shard& shard = index.GetShard();
+
+            ingestor->Shutdown();
         }
 
 
@@ -171,37 +177,37 @@ namespace BitFunnel
             //const size_t sliceBufferSize = GetBufferSize(c_sliceCapacity, rowCounts, schema);
             static const size_t sliceBufferSize = 1024;
 
-            std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator(
+            std::unique_ptr<IRecycler> recycler =
+                std::unique_ptr<IRecycler>(new Recycler());
+            std::unique_ptr<TrackingSliceBufferAllocator> trackingAllocator(
                 new TrackingSliceBufferAllocator(sliceBufferSize));
-            TrackingSliceBufferAllocator& trackingAllocator
-                = dynamic_cast<TrackingSliceBufferAllocator&>(*sliceBufferAllocator);
 
-            std::unique_ptr<IIngestor> ingestor(
-                Factories::CreateIngestor(*sliceBufferAllocator));
-            std::unique_ptr<Shard> shard = std::unique_ptr<Shard>(new Shard(*ingestor, 0u, *sliceBufferAllocator, sliceBufferAllocator->GetSliceBufferSize()));
+            std::unique_ptr<IIngestor> ingestor(Factories::CreateIngestor
+                                                (*recycler,
+                                                 *trackingAllocator));
 
-            // TODO: determine why 0 is expected here.
-            EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 0U);
+            Shard& shard = ingestor->GetShard(0);
+
+            EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 0U);
 
             {
-                Slice* const slice = FillUpAndExpireSlice(*shard, c_sliceCapacity);
-                EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1U);
+                Slice* const slice = FillUpAndExpireSlice(shard, c_sliceCapacity);
+                EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 1U);
 
                 Slice::DecrementRefCount(slice);
-                // TODO: implement Recycler.
-                // EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 0u);
+                EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 0u);
             }
 
             {
-                Slice * const slice = FillUpAndExpireSlice(*shard, c_sliceCapacity);
+                Slice * const slice = FillUpAndExpireSlice(shard, c_sliceCapacity);
                 // TODO: implement Recycler.
-                // EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1U);
+                // EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 1U);
 
                 // Simulate another reference holder of the slice, such as backup writer.
                 Slice::IncrementRefCount(slice);
 
                 // // The slice should not be recycled since there are 2 reference holders.
-                // EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 1u);
+                // EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 1u);
 
                 // // Decrement the ref count, at this point there should be 1 ref count and the
                 // // Slice must not be recycled.
@@ -214,6 +220,8 @@ namespace BitFunnel
                 // Slice::DecrementRefCount(slice);
                 // EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 0u);
             }
+
+            ingestor->Shutdown();
         }
 
 
