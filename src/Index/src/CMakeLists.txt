@@ -38,6 +38,8 @@ set(PRIVATE_HFILES
     DocumentHandleInternal.h
     DocumentLengthHistogram.h
     Ingestor.h
+    IRecyclable.h
+    IRecycler.h
     ISliceBufferAllocator.h
     Shard.h
     Slice.h
