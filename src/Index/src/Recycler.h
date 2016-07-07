@@ -48,7 +48,7 @@ namespace BitFunnel
         //
         // IRecyclable API.
         //
-        virtual bool TryRecycle() override;
+        virtual void Recycle() override;
 
     private:
         Slice* m_slice;
@@ -77,7 +77,10 @@ namespace BitFunnel
     public:
         Recycler();
 
-        void Run();
+        void Run() override;
+
+        // TODO: call on destruction?
+        void Shutdown() override;
 
         // Adds a resource to the list for recycling.
         // Recycler takes ownership of the resource.
@@ -86,5 +89,7 @@ namespace BitFunnel
         // TODO: we should log of this queue fills to the point of blocking on
         // enqueue. That's an unexpected condition.
         std::unique_ptr<BlockingQueue<IRecyclable*>> m_queue;
+
+        std::atomic<bool> m_shutdown;
     };
 }

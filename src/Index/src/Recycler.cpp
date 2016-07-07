@@ -1,5 +1,5 @@
 #include <chrono> // Used for temporary blocking recycle.
-#include <iostream> // TODO:
+#include <iostream> // TODO: remove.
 #include <thread> // Used for temporary blocking recycle.
 
 #include "BitFunnel/Token.h"
@@ -17,14 +17,15 @@ namespace BitFunnel
     // TODO: put this arbitrary 100 constant somewhere
     Recycler::Recycler()
         : m_queue (std::unique_ptr<BlockingQueue<IRecyclable*>>
-                   (new BlockingQueue<IRecyclable*>(100)))
+                   (new BlockingQueue<IRecyclable*>(100))),
+          m_shutdown (false)
     {
     }
 
 
     void Recycler::Run()
     {
-        for (;;)
+        while (!m_shutdown)
         {
             IRecyclable* item;
             // false indicates queue shutdown.
@@ -32,25 +33,22 @@ namespace BitFunnel
             {
                 return;
             }
-            item->TryRecycle();
+            LogAssertB(item, "null IRecycable item.");
+            item->Recycle();
         }
     }
 
     void Recycler::ScheduleRecyling(std::unique_ptr<IRecyclable>& resource)
     {
-        // TODO: need to take ownership of resource.
+        auto ptr = resource.release();
+        LogAssertB(m_queue->TryEnqueue(ptr),
+                   "ScheduleRecycling called on queue that's shutting down.");
+    }
 
-        for (;;)
-        {
-            if (resource->TryRecycle())
-            {
-                break;
-            }
 
-            // TODO: remove this hack.
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(1ms);
-        }
+    void Recycler::Shutdown()
+    {
+        m_queue->Shutdown();
     }
 
 
@@ -69,10 +67,11 @@ namespace BitFunnel
     }
 
 
-    bool SliceListChangeRecyclable::TryRecycle()
+    void SliceListChangeRecyclable::Recycle()
     {
+        std::cout << "Recycle: waiting for token tracker completion.\n";
         m_tokenTracker->WaitForCompletion();
-
+        std::cout << "Recycle: Recycling.\n";
         if (m_slice != nullptr)
         {
             // Deleting a Slice invokes its destructor which returns its
@@ -81,7 +80,5 @@ namespace BitFunnel
         }
 
         delete m_sliceBuffers;
-
-        return true;
     }
 }
