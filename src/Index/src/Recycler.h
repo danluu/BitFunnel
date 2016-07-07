@@ -5,6 +5,7 @@
 
 #include "BitFunnel/IInterface.h"
 #include "BitFunnel/NonCopyable.h"
+#include "BlockingQueue.h"
 #include "IRecyclable.h"
 #include "IRecycler.h"
 
@@ -76,9 +77,14 @@ namespace BitFunnel
     public:
         Recycler();
 
+        void Run();
+
         // Adds a resource to the list for recycling.
         // Recycler takes ownership of the resource.
         virtual void ScheduleRecyling(std::unique_ptr<IRecyclable>& resource) override;
     private:
+        // TODO: we should log of this queue fills to the point of blocking on
+        // enqueue. That's an unexpected condition.
+        std::unique_ptr<BlockingQueue<IRecyclable*>> m_queue;
     };
 }

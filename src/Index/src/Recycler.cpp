@@ -14,15 +14,32 @@ namespace BitFunnel
     // Recycler.
     //
     //*************************************************************************
+    // TODO: put this arbitrary 100 constant somewhere
     Recycler::Recycler()
+        : m_queue (std::unique_ptr<BlockingQueue<IRecyclable*>>
+                   (new BlockingQueue<IRecyclable*>(100)))
     {
     }
 
 
+    void Recycler::Run()
+    {
+        for (;;)
+        {
+            IRecyclable* item;
+            // false indicates queue shutdown.
+            if (!m_queue->TryDequeue(item))
+            {
+                return;
+            }
+            item->TryRecycle();
+        }
+    }
+
     void Recycler::ScheduleRecyling(std::unique_ptr<IRecyclable>& resource)
     {
-        // TODO: replace this with something that inserts item into
-        // AsyncQueue?
+        // TODO: need to take ownership of resource.
+
         for (;;)
         {
             if (resource->TryRecycle())
@@ -54,10 +71,7 @@ namespace BitFunnel
 
     bool SliceListChangeRecyclable::TryRecycle()
     {
-        if (!m_tokenTracker->IsComplete())
-        {
-            return false;
-        }
+        m_tokenTracker->WaitForCompletion();
 
         if (m_slice != nullptr)
         {
