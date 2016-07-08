@@ -4,16 +4,15 @@
 
 #include "BitFunnel/ITermTable.h"
 #include "BitFunnel/NonCopyable.h"
+#include "BitFunnel/RowId.h"
 
 namespace BitFunnel
 {
-    class RowId;
-
     class EmptyTermTable : public ITermTable, NonCopyable
     {
     public:
         EmptyTermTable();
-        EmptyTermTable(std::vector<size_t> const & rowCounts);
+        EmptyTermTable(std::vector<RowIndex> const & rowCounts);
 
         virtual size_t GetTotalRowCount(size_t) const override;
 
@@ -40,7 +39,7 @@ namespace BitFunnel
         virtual PackedTermInfo GetTermInfo(const Term& term, TermKind& termKind) const override;
 
     private:
-        const std::vector<size_t> m_rowCounts;
+        const std::vector<RowIndex> m_rowCounts;
 
     };
 }

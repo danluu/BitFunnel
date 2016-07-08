@@ -1,21 +1,23 @@
-#include "stdafx.h"
-
 #include <algorithm>
 #include <set>
 #include <vector>
 
+#include "gtest/gtest.h"
+
 #include "BitFunnel/NonCopyable.h"
 #include "BitFunnel/Row.h"
 #include "BitFunnel/TermInfo.h"
-#include "EmptyTermTable.h"
+#include "Mocks/EmptyTermTable.h"
 #include "Random.h"
 #include "Rounding.h"
 #include "RowTableDescriptor.h"
-#include "SuiteCpp/UnitTest.h"
 
 
 namespace BitFunnel
 {
+    // TODO: determine if this even matters.
+    static constexpr unsigned c_rowTableByteAlignment = 8;
+
     namespace RowTableDescriptorUnitTest
     {
         class Bit
@@ -71,8 +73,8 @@ namespace BitFunnel
         class RowTableHolder : NonCopyable
         {
         public:
-            RowTableHolder(DocIndex capacity, 
-                           ITermTable const & termTable, 
+            RowTableHolder(DocIndex capacity,
+                           ITermTable const & termTable,
                            Rank rank,
                            ptrdiff_t rowTableOffset);
 
@@ -92,32 +94,27 @@ namespace BitFunnel
         };
 
 
-        RowTableHolder::RowTableHolder(DocIndex capacity, 
-                                       ITermTable const & termTable, 
-                                       Rank rank, 
+        RowTableHolder::RowTableHolder(DocIndex capacity,
+                                       ITermTable const & termTable,
+                                       Rank rank,
                                        ptrdiff_t rowTableOffset)
             : m_rowTableOffsetInBuffer(static_cast<unsigned>(RoundUp(rowTableOffset, c_rowTableByteAlignment))),
-              m_bufferSize(m_rowTableOffsetInBuffer + RowTableDescriptor::GetBufferSize(capacity, 
-                                                                                        termTable.GetTotalRowCount(DDRTier, rank), 
+              m_bufferSize(m_rowTableOffsetInBuffer + RowTableDescriptor::GetBufferSize(capacity,
+                                                                                        termTable.GetTotalRowCount(rank),
                                                                                         rank)),
-              m_buffer(new char[m_bufferSize]),
-              m_rowTable(capacity, termTable.GetTotalRowCount(DDRTier, rank), rank, m_rowTableOffsetInBuffer)
+              m_buffer(static_cast<void*>(new char[m_bufferSize])),
+              m_rowTable(capacity, termTable.GetTotalRowCount(rank), rank, m_rowTableOffsetInBuffer)
         {
-            char const * buffer = reinterpret_cast<char*>(m_buffer);
+            char const * buffer = static_cast<char*>(m_buffer);
 
             // Initially set the buffer to be garbage data.
             memset(m_buffer, 1, m_bufferSize);
 
-            for (unsigned i = 0; i < m_bufferSize; ++i)
-            {
-                TestEqual(*(buffer + i), 1);
-            }
-            
             // Initialize this RowTable's portion in the buffer and verify.
             m_rowTable.Initialize(m_buffer, termTable);
 
-            const size_t rowTableBufferSize = RowTableDescriptor::GetBufferSize(capacity, 
-                                                                                termTable.GetTotalRowCount(DDRTier, rank), 
+            const size_t rowTableBufferSize = RowTableDescriptor::GetBufferSize(capacity,
+                                                                                termTable.GetTotalRowCount(rank),
                                                                                 rank);
 
             if (rank == 0)
@@ -126,9 +123,9 @@ namespace BitFunnel
                 // The range [m_rowTableOffsetInBuffer, m_rowTableOffsetInBuffer + rowTableBufferSize)
                 // is expected to be zeros except for the range which is reserved for match-all row.
                 TermInfo termInfo(ITermTable::GetMatchAllTerm(), termTable);
-                TestAssert(termInfo.MoveNext());
+                EXPECT_TRUE(termInfo.MoveNext());
                 const RowId matchAllRowId = termInfo.Current();
-                TestAssert(!termInfo.MoveNext());
+                EXPECT_TRUE(!termInfo.MoveNext());
                 const ptrdiff_t matchAllStart = m_rowTable.GetRowOffset(matchAllRowId.GetIndex());
                 const ptrdiff_t matchAllEnd = matchAllStart + capacity / 8;
 
@@ -141,16 +138,16 @@ namespace BitFunnel
                         if (i >= matchAllStart && i < matchAllEnd)
                         {
                             // -1 = 0xFF.
-                            TestEqual(*(buffer + i), -1);
+                            EXPECT_EQ(*(buffer + i), -1);
                         }
                         else
                         {
-                            TestEqual(*(buffer + i), 0);
+                            EXPECT_EQ(*(buffer + i), 0);
                         }
                     }
                     else
                     {
-                        TestEqual(*(buffer + i), 1);
+                        EXPECT_EQ(*(buffer + i), 1);
                     }
                 }
             }
@@ -162,11 +159,11 @@ namespace BitFunnel
                 {
                     if (i >= m_rowTableOffsetInBuffer && i < m_rowTableOffsetInBuffer + rowTableBufferSize)
                     {
-                        TestEqual(*(buffer + i), 0);
+                        EXPECT_EQ(*(buffer + i), 0);
                     }
                     else
                     {
-                        TestEqual(*(buffer + i), 1);
+                        EXPECT_EQ(*(buffer + i), 1);
                     }
                 }
             }
@@ -175,7 +172,7 @@ namespace BitFunnel
 
         RowTableHolder::~RowTableHolder()
         {
-            delete[] m_buffer;
+            delete[] static_cast<char*>(m_buffer);
         }
 
 
@@ -222,8 +219,8 @@ namespace BitFunnel
                     // expected.
                     if (rowTable.GetBit(buffer, row, column) != 0)
                     {
-                        TestEqual(expected[current].GetRow(), row);
-                        TestEqual(expected[current].GetColumn(), column);
+                        EXPECT_EQ(expected[current].GetRow(), row);
+                        EXPECT_EQ(expected[current].GetColumn(), column);
 
                         // Advance to the next expected bit that has a
                         // different (row, column). Need to use a while loop
@@ -238,7 +235,7 @@ namespace BitFunnel
                     }
                 }
             }
-            TestEqual(current, expected.size());
+            EXPECT_EQ(current, expected.size());
         }
 
 
@@ -248,15 +245,15 @@ namespace BitFunnel
             void* const buffer = rowTableHolder.GetBuffer();
 
             // Ensure the bit is clear before starting.
-            TestAssert(rowTable.GetBit(buffer, row, column) == 0);
+            EXPECT_EQ(rowTable.GetBit(buffer, row, column), 0);
 
             // Set the bit and verify.
             rowTable.SetBit(buffer, row, column);
-            TestAssert(rowTable.GetBit(buffer, row, column) == 1);
+            EXPECT_EQ(rowTable.GetBit(buffer, row, column), 1);
 
             // Clear the bit and verify.
             rowTable.ClearBit(buffer, row, column);
-            TestAssert(rowTable.GetBit(buffer, row, column) == 0);
+            EXPECT_EQ(rowTable.GetBit(buffer, row, column), 0);
         }
 
 
@@ -266,7 +263,7 @@ namespace BitFunnel
         }
 
 
-        TestCase(BitVectorContents)
+        TEST(BitVectorContents, Trivial)
         {
             const RowIndex c_rowCount = 10;
             const DocIndex c_columnCount = Row::DocumentsInRank0Row(100);
@@ -330,11 +327,11 @@ namespace BitFunnel
         void TestBufferSize(DocIndex capacity, RowIndex rowCount, Rank rank, size_t expectedBufferSize)
         {
             const size_t actualBufferSize = RowTableDescriptor::GetBufferSize(capacity, rowCount, rank);
-            TestEqual(actualBufferSize, expectedBufferSize);
+            EXPECT_EQ(actualBufferSize, expectedBufferSize);
         }
 
 
-        TestCase(BufferSizeTest)
+        TEST(BufferSizeTest, Trivial)
         {
             static const DocIndex c_capacityQuanta = Row::DocumentsInRank0Row(1);
 
@@ -349,7 +346,7 @@ namespace BitFunnel
         }
 
 
-        TestCase(RowOffsetTest)
+        TEST(RowOffsetTest, Trivial)
         {
             {
                 // Rank 0.
@@ -360,9 +357,9 @@ namespace BitFunnel
                 RowTableDescriptor rowTable(c_sliceCapacity, c_rowCount, c_rank, c_bufferOffset);
 
                 // 1536 bytes per row.
-                TestEqual(rowTable.GetRowOffset(0), c_bufferOffset);
-                TestEqual(rowTable.GetRowOffset(10), c_bufferOffset + 1536 * 10);
-                TestEqual(rowTable.GetRowOffset(99), c_bufferOffset + 1536 * 99);
+                EXPECT_EQ(rowTable.GetRowOffset(0), c_bufferOffset);
+                EXPECT_EQ(rowTable.GetRowOffset(10), c_bufferOffset + 1536 * 10);
+                EXPECT_EQ(rowTable.GetRowOffset(99), c_bufferOffset + 1536 * 99);
             }
 
             {
@@ -374,9 +371,9 @@ namespace BitFunnel
                 RowTableDescriptor rowTable(c_sliceCapacity, c_rowCount, c_rank, c_bufferOffset);
 
                 // 128 bytes per row.
-                TestEqual(rowTable.GetRowOffset(0), c_bufferOffset);
-                TestEqual(rowTable.GetRowOffset(10), c_bufferOffset + 128 * 10);
-                TestEqual(rowTable.GetRowOffset(49), c_bufferOffset + 128 * 49);
+                EXPECT_EQ(rowTable.GetRowOffset(0), c_bufferOffset);
+                EXPECT_EQ(rowTable.GetRowOffset(10), c_bufferOffset + 128 * 10);
+                EXPECT_EQ(rowTable.GetRowOffset(49), c_bufferOffset + 128 * 49);
             }
         }
     }

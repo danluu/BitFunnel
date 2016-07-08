@@ -5,7 +5,7 @@
 #include "BitFunnel/RowId.h"
 #include "EmptyTermTable.h"
 #include "LoggerInterfaces/Logging.h"
-#include "Term.h"
+#include "BitFunnel/Term.h"
 
 
 // TODO: move this somewhere appropriate and make it a real value.
@@ -22,7 +22,7 @@ namespace BitFunnel
     }
 
 
-    EmptyTermTable::EmptyTermTable(std::vector<size_t> const & rowCounts)
+    EmptyTermTable::EmptyTermTable(std::vector<RowIndex> const & rowCounts)
         : m_rowCounts(rowCounts)
     {
         LogAssertB(static_cast<size_t>(rowCounts.size()) ==
