@@ -19,6 +19,7 @@ set(CPPFILES
     StreamUtilities.cpp
     TaskDistributor.cpp
     TaskDistributorThread.cpp
+    TermInfo.cpp
     ThreadManager.cpp
     Token.cpp
     TokenManager.cpp

@@ -4,6 +4,7 @@
 
 #include "gtest/gtest.h"
 
+#include "BitFunnel/ITermTable.h"
 #include "BitFunnel/NonCopyable.h"
 #include "BitFunnel/Row.h"
 #include "BitFunnel/TermInfo.h"

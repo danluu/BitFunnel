@@ -4,7 +4,7 @@
 #include "BitFunnel/ITermTable.h"         // Embeds ITermTable::TermKind.
 #include "BitFunnel/Index/IFactSet.h"           // FactHandle is used as a parameter.
 #include "BitFunnel/NonCopyable.h"        // TermInfo inherits from NonCopyable.
-#include "Term.h"               // Embeds Term::Hash.
+#include "BitFunnel/Term.h"               // Embeds Term::Hash.
 
 
 namespace BitFunnel

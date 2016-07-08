@@ -30,7 +30,7 @@
 #include "LoggerInterfaces/Logging.h"
 #include "Recycler.h"
 #include "Shard.h"
-#include "Term.h"       // TODO: Remove this temporary include.
+#include "BitFunnel/Term.h"       // TODO: Remove this temporary include.
 
 
 namespace BitFunnel
