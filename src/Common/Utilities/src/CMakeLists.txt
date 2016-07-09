@@ -12,6 +12,7 @@ set(CPPFILES
     NullLogger.cpp
     Rounding.cpp
     Row.cpp
+    SimpleBuffer.cpp
     SimpleHashPolicy.cpp
     SimpleHashSet.cpp
     SimpleHashSetBase.cpp
@@ -39,6 +40,7 @@ set(PRIVATE_HFILES
     BlockingQueue.h
     MurmurHash2.h
     Rounding.h
+    SimpleBuffer.h
     SimpleHashPolicy.h
     SimpleHashSet.h
     SimpleHashSetBase.h

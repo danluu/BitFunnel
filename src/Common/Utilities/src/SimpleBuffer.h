@@ -36,5 +36,6 @@ namespace BitFunnel
 
         bool m_usedVirtualAlloc;
         char* m_buffer;
+        size_t m_capacity;
     };
 }
