@@ -10,6 +10,7 @@ set(CPPFILES
     LogLevel.cpp
     MurmurHash2.cpp
     NullLogger.cpp
+    PackedArray.cpp
     Rounding.cpp
     Row.cpp
     SimpleBuffer.cpp
@@ -39,6 +40,7 @@ set(PRIVATE_HFILES
     BlockAllocator.h
     BlockingQueue.h
     MurmurHash2.h
+    PackedArray.h
     Rounding.h
     SimpleBuffer.h
     SimpleHashPolicy.h

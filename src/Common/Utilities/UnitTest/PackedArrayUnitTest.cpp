@@ -1,7 +1,7 @@
-#include "stdafx.h"
+#include "gtest/gtest.h"
 
 #include "PackedArray.h"
-#include "SuiteCpp/UnitTest.h"
+
 
 namespace BitFunnel
 {
@@ -10,7 +10,7 @@ namespace BitFunnel
         void RunTest1(unsigned capacity, bool useVirtualAlloc);
 
 
-        TestCase(HeapAlloc)
+        TEST(HeapAlloc, Trivial)
         {
             RunTest1(1, false);
             RunTest1(5, false);
@@ -21,13 +21,13 @@ namespace BitFunnel
         }
 
 
-        TestCase(VirtualAlloc)
+        TEST(VirtualAlloc, Trivial)
         {
             RunTest1(100, true);
         }
 
 
-        TestCase(RoundTrip)
+        TEST(RoundTrip, Trivial)
         {
             // First test that array round trips correctly without virtual alloc.
             unsigned capacity = 1000;
@@ -45,10 +45,10 @@ namespace BitFunnel
 
             PackedArray b(stream);
 
-            TestAssert(a.GetCapacity() == b.GetCapacity());
+            EXPECT_EQ(a.GetCapacity(), b.GetCapacity());
             for (unsigned i = 0 ; i < capacity; ++i)
             {
-                TestAssert(b.Get(i) == i % 512);
+                EXPECT_EQ(b.Get(i), i % 512);
             }
 
             // TODO: Test that the virtual alloc flag round trips.
@@ -61,7 +61,7 @@ namespace BitFunnel
             {
                 PackedArray packed(capacity, bitsPerEntry, useVirtualAlloc);
 
-                unsigned __int64 modulus = 1ULL << bitsPerEntry;
+                uint64_t modulus = 1ULL << bitsPerEntry;
 
                 for (unsigned i = 0 ; i < capacity; ++i)
                 {
@@ -70,11 +70,11 @@ namespace BitFunnel
                     // Verify contents of buffer.
                     for (unsigned j = 0 ; j < capacity; ++j)
                     {
-                        unsigned __int64 expected = (j <= i) ? (j % modulus) : 0;
-                        unsigned __int64 found = packed.Get(j);
+                        uint64_t expected = (j <= i) ? (j % modulus) : 0;
+                        uint64_t found = packed.Get(j);
 
                         // If we have written the index, we expect the value we wrote.
-                        TestAssert(expected == found);
+                        EXPECT_EQ(expected, found);
                     }
                 }
             }

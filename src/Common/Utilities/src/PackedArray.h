@@ -48,10 +48,10 @@ namespace BitFunnel
         size_t GetCapacity() const;
 
         // Returns the value at the specified position in the array.
-        unsigned __int64 Get(size_t index) const;
+        uint64_t Get(size_t index) const;
 
         // Sets the value at the specified position in the array.
-        void Set(size_t index, unsigned __int64 value);
+        void Set(size_t index, uint64_t value);
 
         //
         // Static methods below are provided for other classes that want to use
@@ -64,8 +64,8 @@ namespace BitFunnel
                                     unsigned bitsPerEntry);
 
         // Allocates the underlying buffer, with space for 'capacity' entries,
-        // each with 'bitsPerEntry' entries. 
-        static unsigned __int64* AllocateBuffer(size_t capacity,
+        // each with 'bitsPerEntry' entries.
+        static uint64_t* AllocateBuffer(size_t capacity,
                                                 unsigned bitsPerEntry,
                                                 bool useVirtualAlloc);
 
@@ -74,10 +74,10 @@ namespace BitFunnel
         // where each entry has 'bitsPerEntry' bits. The mask should be set
         // to (1 << bitsPerEntry) - 1. Does not perform bounds checking
         // on index.
-        static unsigned __int64 Get(size_t index,
+        static uint64_t Get(size_t index,
                                 unsigned bitsPerEntry,
-                                unsigned __int64 mask,
-                                unsigned __int64* buffer);
+                                uint64_t mask,
+                                uint64_t* buffer);
 
         // Sets the value at the specified index in a packed array of
         // where each entry has 'bitsPerEntry' bits. The mask should be set
@@ -85,9 +85,9 @@ namespace BitFunnel
         // on index.
         static void Set(size_t index,
                         unsigned bitsPerEntry,
-                        unsigned __int64 mask,
-                        unsigned __int64* buffer,
-                        unsigned __int64 value);
+                        uint64_t mask,
+                        uint64_t* buffer,
+                        uint64_t value);
 
         // Returns the maximum number of bits supported in an entry.
         static unsigned GetMaxBitsPerEntry();
@@ -99,9 +99,9 @@ namespace BitFunnel
         bool m_useVirtualAlloc;
         size_t m_capacity;
         unsigned m_bitsPerEntry;
-        unsigned __int64 m_mask;
+        uint64_t m_mask;
 
         // Buffer that holds packed array values.
-        unsigned __int64* m_buffer;
+        uint64_t* m_buffer;
     };
 }

@@ -11,6 +11,7 @@ set(CPPFILES
     ConstructorDestructorCounter.cpp
     FileHeaderUnitTest.cpp
     MurmurHashUnitTest.cpp
+    PackedArrayUnitTest.cpp
     RandomUnitTest.cpp
     RoundingUnitTest.cpp
     SimpleHashSetUnitTest.cpp
