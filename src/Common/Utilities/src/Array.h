@@ -3,7 +3,7 @@
 #include <istream>              // std::istream used as parameter.
 #include <ostream>              // std::ostream used as parameter.
 
-#include "BitFunnel/StreamUtilities.h"    // Template code calls.
+#include "BitFunnel/Utilities/StreamUtilities.h"    // Template code calls.
 #include "SimpleBuffer.h"       // Embeds SimpleBuffer.
 
 
@@ -206,7 +206,7 @@ namespace BitFunnel
         : m_buffer(0)
     {
         // Initialize array.
-        m_size = StreamUtilities::ReadField<unsigned __int64>(input);
+        m_size = StreamUtilities::ReadField<uint64_t>(input);
 
         m_buffer.Resize(m_size * sizeof(T));
         m_entries = reinterpret_cast<T*>(m_buffer.GetBuffer());
@@ -228,7 +228,7 @@ namespace BitFunnel
     template <typename T>
     void Array<T>::Write(std::ostream& output)
     {
-        StreamUtilities::WriteField<unsigned __int64>(output, m_size);
+        StreamUtilities::WriteField<uint64_t>(output, m_size);
         StreamUtilities::WriteArray(output, m_entries, m_size);
     }
 
@@ -281,8 +281,8 @@ namespace BitFunnel
         : m_buffer(0)
     {
         // Initialize array.
-        m_size1 = StreamUtilities::ReadField<unsigned __int64>(input);
-        m_size2 = StreamUtilities::ReadField<unsigned __int64>(input);
+        m_size1 = StreamUtilities::ReadField<uint64_t>(input);
+        m_size2 = StreamUtilities::ReadField<uint64_t>(input);
 
         m_buffer.Resize(m_size1 * m_size2 * sizeof(T));
         m_entries = reinterpret_cast<T*>(m_buffer.GetBuffer());
@@ -304,8 +304,8 @@ namespace BitFunnel
     template <typename T>
     void Array2D<T>::Write(std::ostream& output)
     {
-        StreamUtilities::WriteField<unsigned __int64>(output, m_size1);
-        StreamUtilities::WriteField<unsigned __int64>(output, m_size2);
+        StreamUtilities::WriteField<uint64_t>(output, m_size1);
+        StreamUtilities::WriteField<uint64_t>(output, m_size2);
         StreamUtilities::WriteArray(output, m_entries, m_size1 * m_size2);
     }
 
@@ -361,8 +361,8 @@ namespace BitFunnel
     ArrayFixed<T, A>::ArrayFixed(std::istream& input)
         : m_buffer(A * sizeof(T))
     {
-        size_t a = StreamUtilities::ReadField<unsigned __int64>(input);
-        LogAssertB(A == a);
+        size_t a = StreamUtilities::ReadField<uint64_t>(input);
+        LogAssertB(A == a, "Read incorrect number of bytes.");
 
         m_entries = reinterpret_cast<T*>(m_buffer.GetBuffer());
         StreamUtilities::ReadArray(input, m_entries, A);
@@ -382,7 +382,7 @@ namespace BitFunnel
     template <typename T, size_t A>
     void ArrayFixed<T, A>::Write(std::ostream& output) const
     {
-        StreamUtilities::WriteField<unsigned __int64>(output, A);
+        StreamUtilities::WriteField<uint64_t>(output, A);
 
         StreamUtilities::WriteArray(output, m_entries, A);
     }
@@ -432,11 +432,11 @@ namespace BitFunnel
     Array2DFixed<T, A, B>::Array2DFixed(std::istream& input)
         : m_buffer(A * B * sizeof(T))
     {
-        size_t a = StreamUtilities::ReadField<unsigned __int64>(input);
-        LogAssertB(A == a);
+        size_t a = StreamUtilities::ReadField<uint64_t>(input);
+        LogAssertB(A == a, "Read incorrect number of bytes.");
 
-        size_t b = StreamUtilities::ReadField<unsigned __int64>(input);
-        LogAssertB(B == b);
+        size_t b = StreamUtilities::ReadField<uint64_t>(input);
+        LogAssertB(B == b, "Read incorrect number of bytes.");
 
         m_entries = reinterpret_cast<T*>(m_buffer.GetBuffer());
         StreamUtilities::ReadArray(input, m_entries, A * B);
@@ -456,8 +456,8 @@ namespace BitFunnel
     template <typename T, size_t A, size_t B>
     void Array2DFixed<T, A, B>::Write(std::ostream& output) const
     {
-        StreamUtilities::WriteField<unsigned __int64>(output, A);
-        StreamUtilities::WriteField<unsigned __int64>(output, B);
+        StreamUtilities::WriteField<uint64_t>(output, A);
+        StreamUtilities::WriteField<uint64_t>(output, B);
 
         StreamUtilities::WriteArray(output, m_entries, A * B);
     }
@@ -514,14 +514,14 @@ namespace BitFunnel
     Array3DFixed<T, A, B, C>::Array3DFixed(std::istream& input)
         : m_buffer(A * B * C * sizeof(T))
     {
-        size_t a = StreamUtilities::ReadField<unsigned __int64>(input);
-        LogAssertB(A == a);
+        size_t a = StreamUtilities::ReadField<uint64_t>(input);
+        LogAssertB(A == a, "Read incorrect number of bytes.");
 
-        size_t b = StreamUtilities::ReadField<unsigned __int64>(input);
-        LogAssertB(B == b);
+        size_t b = StreamUtilities::ReadField<uint64_t>(input);
+        LogAssertB(B == b, "Read incorrect number of bytes.");
 
-        size_t c = StreamUtilities::ReadField<unsigned __int64>(input);
-        LogAssertB(C == c);
+        size_t c = StreamUtilities::ReadField<uint64_t>(input);
+        LogAssertB(C == c, "Read incorrect number of bytes.");
 
         m_entries = reinterpret_cast<T*>(m_buffer.GetBuffer());
         StreamUtilities::ReadArray(input, m_entries, A * B * C);
@@ -541,9 +541,9 @@ namespace BitFunnel
     template <typename T, size_t A, size_t B, size_t C>
     void Array3DFixed<T, A, B, C>::Write(std::ostream& output) const
     {
-        StreamUtilities::WriteField<unsigned __int64>(output, A);
-        StreamUtilities::WriteField<unsigned __int64>(output, B);
-        StreamUtilities::WriteField<unsigned __int64>(output, C);
+        StreamUtilities::WriteField<uint64_t>(output, A);
+        StreamUtilities::WriteField<uint64_t>(output, B);
+        StreamUtilities::WriteField<uint64_t>(output, C);
 
         StreamUtilities::WriteArray(output, m_entries, A * B * C);
     }

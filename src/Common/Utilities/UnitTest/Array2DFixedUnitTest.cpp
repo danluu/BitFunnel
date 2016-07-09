@@ -1,17 +1,16 @@
-#include "stdafx.h"
-
 #include <sstream>
+
+#include "gtest/gtest.h"
 
 #include "Array.h"
 #include "ConstructorDestructorCounter.h"
-#include "SuiteCpp/UnitTest.h"
 
 
 namespace BitFunnel
 {
     namespace Array2DFixedUnitTest
     {
-        TestCase(Initialization)
+        TEST(Initialization, Trivial)
         {
             ConstructorDestructorCounter::ClearCount();
 
@@ -21,15 +20,15 @@ namespace BitFunnel
             {
                 Array2DFixed<ConstructorDestructorCounter, size1, size2> a;
 
-                TestAssert(ConstructorDestructorCounter::GetConstructorCount() == size1 * size2);
-                TestAssert(ConstructorDestructorCounter::GetDestructorCount() == 0);
+                EXPECT_EQ(ConstructorDestructorCounter::GetConstructorCount(), size1 * size2);
+                EXPECT_EQ(ConstructorDestructorCounter::GetDestructorCount(), 0u);
             }
 
-            TestAssert(ConstructorDestructorCounter::GetDestructorCount() == size1 * size2);
+            EXPECT_EQ(ConstructorDestructorCounter::GetDestructorCount(), size1 * size2);
         }
 
 
-        TestCase(FieldAccess)
+        TEST(FieldAccess, Trivial)
         {
             const unsigned size1 = 3;
             const unsigned size2 = 5;
@@ -50,13 +49,13 @@ namespace BitFunnel
             {
                 for (unsigned y = 0; y < size2; ++y)
                 {
-                    TestAssert(a.At(x, y) ==  counter++);
+                    EXPECT_EQ(a.At(x, y), counter++);
                 }
             }
         }
 
 
-        TestCase(RoundTrip)
+        TEST(RoundTrip, Trivial)
         {
             const unsigned size1 = 3;
             const unsigned size2 = 5;
@@ -82,7 +81,7 @@ namespace BitFunnel
             {
                 for (unsigned y = 0; y < size2; ++y)
                 {
-                    TestAssert(b.At(x, y) ==  counter++);
+                    EXPECT_EQ(b.At(x, y), counter++);
                 }
             }
         }

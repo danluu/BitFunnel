@@ -3,6 +3,9 @@
 # TODO: move ThrowingLogger to some shared folder?
 
 set(CPPFILES
+    Array2DFixedUnitTest.cpp
+    Array3DFixedUnitTest.cpp
+    Array2DUnitTest.cpp
     BlockAllocatorUnitTest.cpp
     BlockingQueueUnitTest.cpp
     ConstructorDestructorCounter.cpp

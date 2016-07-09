@@ -1,17 +1,16 @@
-#include "stdafx.h"
-
 #include <sstream>
+
+#include "gtest/gtest.h"
 
 #include "Array.h"
 #include "ConstructorDestructorCounter.h"
-#include "SuiteCpp/UnitTest.h"
 
 
 namespace BitFunnel
 {
     namespace Array3DFixedUnitTest
     {
-        TestCase(Initialization)
+        TEST(Initialization, Trivial)
         {
             ConstructorDestructorCounter::ClearCount();
 
@@ -22,15 +21,15 @@ namespace BitFunnel
             {
                 Array3DFixed<ConstructorDestructorCounter, size1, size2, size3> a;
 
-                TestAssert(ConstructorDestructorCounter::GetConstructorCount() == size1 * size2 * size3);
-                TestAssert(ConstructorDestructorCounter::GetDestructorCount() == 0);
+                EXPECT_EQ(ConstructorDestructorCounter::GetConstructorCount(), size1 * size2 * size3);
+                EXPECT_EQ(ConstructorDestructorCounter::GetDestructorCount(), 0u);
             }
 
-            TestAssert(ConstructorDestructorCounter::GetDestructorCount() == size1 * size2 * size3);
+            EXPECT_EQ(ConstructorDestructorCounter::GetDestructorCount(), size1 * size2 * size3);
         }
 
 
-        TestCase(FieldAccess)
+        TEST(FieldAccess, Trivial)
         {
             const unsigned size1 = 3;
             const unsigned size2 = 5;
@@ -57,14 +56,14 @@ namespace BitFunnel
                 {
                     for (unsigned z = 0; z < size3; ++z)
                     {
-                        TestAssert(a.At(x, y, z) ==  counter++);
+                        EXPECT_EQ(a.At(x, y, z), counter++);
                     }
                 }
             }
         }
 
 
-        TestCase(RoundTrip)
+        TEST(RoundTrip, Trivial)
         {
             const unsigned size1 = 3;
             const unsigned size2 = 5;
@@ -96,7 +95,7 @@ namespace BitFunnel
                 {
                     for (unsigned z = 0; z < size3; ++z)
                     {
-                        TestAssert(b.At(x, y, z) ==  counter++);
+                        EXPECT_EQ(b.At(x, y, z), counter++);
                     }
                 }
             }
