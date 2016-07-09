@@ -5,6 +5,7 @@
 set(CPPFILES
     BlockAllocatorUnitTest.cpp
     BlockingQueueUnitTest.cpp
+    ConstructorDestructorCounter.cpp
     FileHeaderUnitTest.cpp
     MurmurHashUnitTest.cpp
     RandomUnitTest.cpp
