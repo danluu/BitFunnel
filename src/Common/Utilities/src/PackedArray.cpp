@@ -2,6 +2,7 @@
 #include <Windows.h>   // For VirtualAlloc/VirtualFree.
 #else
 #include <cerrno>
+#include <cstring>
 #include <sys/mman.h>  // For mmap/munmap.
 #endif
 
