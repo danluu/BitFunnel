@@ -38,7 +38,7 @@ namespace BitFunnel
 
         // Returns the number of bytes allocated to a row that holds at least
         // documentCount documents.
-        static unsigned BytesInRow(DocIndex documentCount, Rank rowRank);
+        static size_t BytesInRow(DocIndex documentCount, Rank rowRank);
 
         // Returns the actual document capacity of a rank 0 row that has space for
         // at least documentCount documents. The actual capacity will never be less

@@ -54,16 +54,16 @@ namespace BitFunnel
         const ITermTable& m_termTable;
 
         // Slot index for first RowId.
-        unsigned m_rowIdStart;
+        size_t m_rowIdStart;
 
         // Number of RowId to be enumerated.
-        unsigned m_rowIdCount;
+        size_t m_rowIdCount;
 
         // Stores what kind of the term this TermInfo is for.
         ITermTable::TermKind m_termKind;
 
         // Using int, rather than unsigned to allow for -1 sentinal for
         // position before start of enumerator.
-        int m_currentRow;
+        int64_t m_currentRow;
     };
 }
