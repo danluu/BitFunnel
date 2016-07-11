@@ -139,16 +139,16 @@ namespace BitFunnel
                         if (i >= matchAllStart && i < matchAllEnd)
                         {
                             // -1 = 0xFF.
-                            EXPECT_EQ(*(buffer + i), -1);
+                            EXPECT_EQ(*(buffer + i), 0xFF);
                         }
                         else
                         {
-                            EXPECT_EQ(*(buffer + i), 0);
+                            EXPECT_EQ(*(buffer + i), 0x0);
                         }
                     }
                     else
                     {
-                        EXPECT_EQ(*(buffer + i), 1);
+                        EXPECT_EQ(*(buffer + i), 0x1);
                     }
                 }
             }
@@ -160,11 +160,11 @@ namespace BitFunnel
                 {
                     if (i >= m_rowTableOffsetInBuffer && i < m_rowTableOffsetInBuffer + rowTableBufferSize)
                     {
-                        EXPECT_EQ(*(buffer + i), 0);
+                        EXPECT_EQ(*(buffer + i), 0x0);
                     }
                     else
                     {
-                        EXPECT_EQ(*(buffer + i), 1);
+                        EXPECT_EQ(*(buffer + i), 0x1);
                     }
                 }
             }
@@ -246,15 +246,15 @@ namespace BitFunnel
             void* const buffer = rowTableHolder.GetBuffer();
 
             // Ensure the bit is clear before starting.
-            EXPECT_EQ(rowTable.GetBit(buffer, row, column), 0);
+            EXPECT_EQ(rowTable.GetBit(buffer, row, column), 0u);
 
             // Set the bit and verify.
             rowTable.SetBit(buffer, row, column);
-            EXPECT_EQ(rowTable.GetBit(buffer, row, column), 1);
+            EXPECT_NE(rowTable.GetBit(buffer, row, column), 0u);
 
             // Clear the bit and verify.
             rowTable.ClearBit(buffer, row, column);
-            EXPECT_EQ(rowTable.GetBit(buffer, row, column), 0);
+            EXPECT_EQ(rowTable.GetBit(buffer, row, column), 0u);
         }
 
 
