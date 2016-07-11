@@ -139,7 +139,7 @@ namespace BitFunnel
                         if (i >= matchAllStart && i < matchAllEnd)
                         {
                             // -1 = 0xFF.
-                            EXPECT_EQ(*(buffer + i), 0xFF);
+                            EXPECT_EQ(*(buffer + i), '\xFF');
                         }
                         else
                         {
@@ -220,8 +220,8 @@ namespace BitFunnel
                     // expected.
                     if (rowTable.GetBit(buffer, row, column) != 0)
                     {
-                        EXPECT_EQ(expected[current].GetRow(), row);
-                        EXPECT_EQ(expected[current].GetColumn(), column);
+                        ASSERT_EQ(expected[current].GetRow(), row);
+                        ASSERT_EQ(expected[current].GetColumn(), column);
 
                         // Advance to the next expected bit that has a
                         // different (row, column). Need to use a while loop
@@ -236,7 +236,7 @@ namespace BitFunnel
                     }
                 }
             }
-            EXPECT_EQ(current, expected.size());
+            ASSERT_EQ(current, expected.size());
         }
 
 
@@ -246,15 +246,15 @@ namespace BitFunnel
             void* const buffer = rowTableHolder.GetBuffer();
 
             // Ensure the bit is clear before starting.
-            EXPECT_EQ(rowTable.GetBit(buffer, row, column), 0u);
+            ASSERT_EQ(rowTable.GetBit(buffer, row, column), 0u);
 
             // Set the bit and verify.
             rowTable.SetBit(buffer, row, column);
-            EXPECT_NE(rowTable.GetBit(buffer, row, column), 0u);
+            ASSERT_NE(rowTable.GetBit(buffer, row, column), 0u);
 
             // Clear the bit and verify.
             rowTable.ClearBit(buffer, row, column);
-            EXPECT_EQ(rowTable.GetBit(buffer, row, column), 0u);
+            ASSERT_EQ(rowTable.GetBit(buffer, row, column), 0u);
         }
 
 
@@ -281,7 +281,22 @@ namespace BitFunnel
                 const RowIndex c_publicRowCount = c_rowCount - c_systemRowCount;
                 for (DocIndex column = 0; column < c_columnCount; ++column)
                 {
-                    VerifySetAndClear(holder, (column % c_publicRowCount) + c_systemRowCount, column);
+                    {
+                        RowTableDescriptor& rowTable = holder.GetRowTable();
+                        RowIndex row = (column % c_publicRowCount) + c_systemRowCount;
+                        void* const buffer = holder.GetBuffer();
+
+                        // Ensure the bit is clear before starting.
+                        ASSERT_EQ(rowTable.GetBit(buffer, row, column), 0u);
+
+                        // Set the bit and verify.
+                        rowTable.SetBit(buffer, row, column);
+                        ASSERT_EQ(rowTable.GetBit(buffer, row, column), 1u);
+
+                        // Clear the bit and verify.
+                        rowTable.ClearBit(buffer, row, column);
+                        ASSERT_EQ(rowTable.GetBit(buffer, row, column), 0u);
+                    }
                 }
             }
 

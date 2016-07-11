@@ -73,8 +73,9 @@ namespace BitFunnel
         uint64_t bitPos = offset & 0x3F;
         uint64_t bitMask = 1ull << bitPos;
         uint64_t maskedVal = *(row + offset) & bitMask;
-        // TODO: check if we need to shift the result down.
-        return maskedVal;
+        // TODO: check if the usage of this actually requires shifting the bit
+        // back down.
+        return maskedVal >> bitPos;
     }
 
 
@@ -106,7 +107,7 @@ namespace BitFunnel
         // _interlockedbittestandreset64(row + (offset >> 6), offset & 0x3F);
 
         uint64_t bitPos = offset & 0x3F;
-        uint64_t bitMask = ~(1 << bitPos);
+        uint64_t bitMask = ~(1ull << bitPos);
         uint64_t newVal = *(row + offset) & bitMask;
         *(row + offset) = newVal;
     }
