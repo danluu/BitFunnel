@@ -2,6 +2,8 @@
 
 #include <string>
 
+// TODO: remove stream types we don't have outside of Bing.
+
 namespace BitFunnel
 {
     namespace Stream

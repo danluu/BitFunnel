@@ -18,6 +18,7 @@ set(CPPFILES
     SimpleHashSet.cpp
     SimpleHashSetBase.cpp
     StandardInputStream.cpp
+    Stream.cpp
     StreamUtilities.cpp
     TaskDistributor.cpp
     TaskDistributorThread.cpp
