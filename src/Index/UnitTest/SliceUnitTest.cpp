@@ -1,19 +1,10 @@
 #include <unordered_set>
 #include <future>
 
-// #include "BitFunnel/Factories.h"
-// #include "BitFunnel/Row.h"
-// #include "BitFunnel/TermInfo.h"
-// #include "DocumentDataSchema.h"
-// #include "EmptyTermTable.h"
-// #include "ExpectException.h"
 // #include "IndexWrapper.h"
 // #include "LoggerInterfaces/Logging.h"
 // #include "Random.h"
-// #include "Slice.h"
-// #include "Shard.h"
 // #include "ThrowingLogger.h"
-// #include "TrackingSliceBufferAllocator.h"
 
 #include "gtest/gtest.h"
 
@@ -22,6 +13,7 @@
 #include "BitFunnel/ITermTable.h"
 #include "BitFunnel/Row.h"
 #include "BitFunnel/TermInfo.h"
+#include "DocumentDataSchema.h"
 #include "Ingestor.h"
 #include "IRecycler.h"
 #include "ISliceBufferAllocator.h"
@@ -60,9 +52,19 @@ namespace BitFunnel
             std::unique_ptr<ISliceBufferAllocator> trackingAllocator(
                 new TrackingSliceBufferAllocator(sliceBufferSize));
 
-            std::unique_ptr<IIngestor> ingestor(Factories::CreateIngestor
-                                                (*recycler,
-                                                 *trackingAllocator));
+            static const std::vector<RowIndex>
+                rowCounts = { c_systemRowCount, 0, 0, 1, 0, 0, 1 };
+            std::shared_ptr<ITermTable const>
+                termTable(new EmptyTermTable(rowCounts));
+
+            DocumentDataSchema schema;
+
+            std::unique_ptr<IIngestor>
+                ingestor(Factories::CreateIngestor(schema,
+                                                   *recycler,
+                                                   *termTable,
+                                                   *trackingAllocator));
+
             Shard& shard = ingestor->GetShard(0);
 
             static const size_t c_sliceCapacity = 16;
@@ -190,9 +192,18 @@ namespace BitFunnel
             std::unique_ptr<TrackingSliceBufferAllocator> trackingAllocator(
                 new TrackingSliceBufferAllocator(sliceBufferSize));
 
-            std::unique_ptr<IIngestor> ingestor(Factories::CreateIngestor
-                                                (*recycler,
-                                                 *trackingAllocator));
+            static const std::vector<RowIndex>
+                rowCounts = { c_systemRowCount, 0, 0, 1, 0, 0, 1 };
+            std::shared_ptr<ITermTable const>
+                termTable(new EmptyTermTable(rowCounts));
+
+            DocumentDataSchema schema;
+
+            const std::unique_ptr<IIngestor>
+                ingestor(Factories::CreateIngestor(schema,
+                                                   *recycler,
+                                                   *termTable,
+                                                   *trackingAllocator));
 
             Shard& shard = ingestor->GetShard(0);
 
@@ -250,9 +261,18 @@ namespace BitFunnel
             std::unique_ptr<TrackingSliceBufferAllocator> trackingAllocator(
                 new TrackingSliceBufferAllocator(sliceBufferSize));
 
-            std::unique_ptr<IIngestor> ingestor(Factories::CreateIngestor
-                                                (*recycler,
-                                                 *trackingAllocator));
+            static const std::vector<RowIndex>
+                rowCounts = { c_systemRowCount, 0, 0, 1, 0, 0, 1 };
+            std::shared_ptr<ITermTable const>
+                termTable(new EmptyTermTable(rowCounts));
+
+            DocumentDataSchema schema;
+
+            const std::unique_ptr<IIngestor>
+                ingestor(Factories::CreateIngestor(schema,
+                                                   *recycler,
+                                                   *termTable,
+                                                   *trackingAllocator));
 
             Shard& shard = ingestor->GetShard(0);
 
@@ -265,9 +285,6 @@ namespace BitFunnel
             // Test placement of Slice* in the last bytes of the slice buffer.
             EXPECT_EQ(Slice::GetSliceFromBuffer(sliceBuffer, shard.GetSlicePtrOffset()), &slice);
 
-
-            static const std::vector<RowIndex> rowCounts = { c_systemRowCount, 0, 0, 1, 0, 0, 1 };
-            std::shared_ptr<ITermTable const> termTable(new EmptyTermTable(rowCounts));
             TermInfo termInfo(ITermTable::GetMatchAllTerm(), *termTable);
             ASSERT_TRUE(termInfo.MoveNext());
             // const RowId matchAllRowId = termInfo.Current();

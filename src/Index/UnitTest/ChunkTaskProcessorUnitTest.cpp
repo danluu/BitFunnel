@@ -8,6 +8,10 @@
 #include "BitFunnel/Index/Factories.h"
 #include "BitFunnel/Index/IConfiguration.h"
 #include "BitFunnel/Index/IIngestor.h"
+#include "BitFunnel/Row.h"
+#include "BitFunnel/RowId.h"
+#include "DocumentDataSchema.h"
+#include "Mocks/EmptyTermTable.h"
 #include "IRecycler.h"
 #include "ChunkTaskProcessor.h"
 #include "Recycler.h"
@@ -40,8 +44,19 @@ namespace BitFunnel
             std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator =
                 std::unique_ptr<ISliceBufferAllocator>(
                     new SliceBufferAllocator(384, 384*16));
-            const std::unique_ptr<IIngestor> ingestor(
-                Factories::CreateIngestor(*recycler, *sliceBufferAllocator));
+
+            static const std::vector<RowIndex>
+                rowCounts = { c_systemRowCount, 0, 0, 1, 0, 0, 1 };
+            std::shared_ptr<ITermTable const>
+                termTable(new EmptyTermTable(rowCounts));
+
+            DocumentDataSchema schema;
+
+            const std::unique_ptr<IIngestor>
+                ingestor(Factories::CreateIngestor(schema,
+                                                   *recycler,
+                                                   *termTable,
+                                                   *sliceBufferAllocator));
 
             ChunkTaskProcessor processor(filePaths, *configuration, *ingestor);
 
