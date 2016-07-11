@@ -12,60 +12,57 @@ namespace BitFunnel
     static const char* c_nonBodyName = "nonbody";
     static const char* c_invalidName = "invalid";
 
-    namespace Stream
+    StreamId StringToClassification(const std::string& s)
     {
-        Stream::Classification StringToClassification(const std::string& s)
+        if (s.compare(c_clickName) == 0)
         {
-            if (s.compare(c_clickName) == 0)
-            {
-                return Stream::Click;
-            }
-            else if (s.compare(c_clickExperimentalName) == 0)
-            {
-                return Stream::ClickExperimental;
-            }
-            else if (s.compare(c_fullName) == 0)
-            {
-                return Stream::Full;
-            }
-            else if (s.compare(c_fullExperimentalName) == 0)
-            {
-                return Stream::FullExperimental;
-            }
-            else if (s.compare(c_metaWordName) == 0)
-            {
-                return Stream::MetaWord;
-            }
-            else if (s.compare(c_nonBodyName) == 0)
-            {
-                return Stream::NonBody;
-            }
-            else
-            {
-                return Stream::Invalid;
-            }
+            return StreamId::Click;
         }
-
-
-        const char* ClassificationToString(Classification classification)
+        else if (s.compare(c_clickExperimentalName) == 0)
         {
-            switch (classification)
-            {
-            case Click:
-                return c_clickName;
-            case ClickExperimental:
-                return c_clickExperimentalName;
-            case Full:
-                return c_fullName;
-            case FullExperimental:
-                return c_fullExperimentalName;
-            case MetaWord:
-                return c_metaWordName;
-            case NonBody:
-                return c_nonBodyName;
-            default:
-                return c_invalidName;
-            }
+            return StreamId::ClickExperimental;
+        }
+        else if (s.compare(c_fullName) == 0)
+        {
+            return StreamId::Full;
+        }
+        else if (s.compare(c_fullExperimentalName) == 0)
+        {
+            return StreamId::FullExperimental;
+        }
+        else if (s.compare(c_metaWordName) == 0)
+        {
+            return StreamId::MetaWord;
+        }
+        else if (s.compare(c_nonBodyName) == 0)
+        {
+            return StreamId::NonBody;
+        }
+        else
+        {
+            return StreamId::Invalid;
+        }
+    }
+
+
+    const char* ClassificationToString(StreamId classification)
+    {
+        switch (classification)
+        {
+        case Click:
+            return c_clickName;
+        case ClickExperimental:
+            return c_clickExperimentalName;
+        case Full:
+            return c_fullName;
+        case FullExperimental:
+            return c_fullExperimentalName;
+        case MetaWord:
+            return c_metaWordName;
+        case NonBody:
+            return c_nonBodyName;
+        default:
+            return c_invalidName;
         }
     }
 }
