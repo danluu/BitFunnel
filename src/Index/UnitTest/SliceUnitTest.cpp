@@ -28,6 +28,15 @@ namespace BitFunnel
     namespace SliceUnitTest
     {
 
+        size_t GetBufferSize(DocIndex capacity,
+                             std::vector<RowIndex> const & rowCounts,
+                             IDocumentDataSchema const & schema)
+        {
+            EmptyTermTable termTable(rowCounts);
+            return Shard::InitializeDescriptors(nullptr, capacity, schema, termTable);
+        }
+
+
         TEST(SliceAllocateCommitExpire, Trivial)
         {
             /*
@@ -48,7 +57,7 @@ namespace BitFunnel
                 std::unique_ptr<IRecycler>(new Recycler());
 
             // TODO: figure out what this should be.
-            static const size_t sliceBufferSize = 32;
+            static const size_t sliceBufferSize = 3072;
             std::unique_ptr<ISliceBufferAllocator> trackingAllocator(
                 new TrackingSliceBufferAllocator(sliceBufferSize));
 
@@ -179,25 +188,26 @@ namespace BitFunnel
             // static const DocIndex c_sliceCapacity = Row::DocumentsInRank0Row(1);
             static const size_t c_sliceCapacity = 16;
 
-            //const size_t sliceBufferSize = GetBufferSize(c_sliceCapacity, rowCounts, schema);
-            static const size_t sliceBufferSize = 1024;
+            // static const size_t sliceBufferSize = 2048;
 
             // Totally arbitrary time to allow recycler thread to recycle in time.
             static const auto c_sleepTime = std::chrono::milliseconds(2);
 
+            DocumentDataSchema schema;
+
             std::unique_ptr<IRecycler> recycler =
                 std::unique_ptr<IRecycler>(new Recycler());
             auto background = std::async(std::launch::async, &IRecycler::Run, recycler.get());
-
-            std::unique_ptr<TrackingSliceBufferAllocator> trackingAllocator(
-                new TrackingSliceBufferAllocator(sliceBufferSize));
 
             static const std::vector<RowIndex>
                 rowCounts = { c_systemRowCount, 0, 0, 1, 0, 0, 1 };
             std::shared_ptr<ITermTable const>
                 termTable(new EmptyTermTable(rowCounts));
 
-            DocumentDataSchema schema;
+            const size_t sliceBufferSize = GetBufferSize(c_sliceCapacity, rowCounts, schema);
+
+            std::unique_ptr<TrackingSliceBufferAllocator> trackingAllocator(
+                new TrackingSliceBufferAllocator(sliceBufferSize));
 
             const std::unique_ptr<IIngestor>
                 ingestor(Factories::CreateIngestor(schema,
@@ -251,22 +261,22 @@ namespace BitFunnel
 
         TEST(BasicIntegration, Trivial)
         {
-            //const size_t sliceBufferSize = GetBufferSize(c_sliceCapacity, rowCounts, schema);
-            static const size_t sliceBufferSize = 1024;
+            DocumentDataSchema schema;
 
             std::unique_ptr<IRecycler> recycler =
                 std::unique_ptr<IRecycler>(new Recycler());
             auto background = std::async(std::launch::async, &IRecycler::Run, recycler.get());
-
-            std::unique_ptr<TrackingSliceBufferAllocator> trackingAllocator(
-                new TrackingSliceBufferAllocator(sliceBufferSize));
 
             static const std::vector<RowIndex>
                 rowCounts = { c_systemRowCount, 0, 0, 1, 0, 0, 1 };
             std::shared_ptr<ITermTable const>
                 termTable(new EmptyTermTable(rowCounts));
 
-            DocumentDataSchema schema;
+            static const DocIndex c_sliceCapacity = Row::DocumentsInRank0Row(1);
+            const size_t sliceBufferSize = GetBufferSize(c_sliceCapacity, rowCounts, schema);
+
+            std::unique_ptr<TrackingSliceBufferAllocator> trackingAllocator(
+                new TrackingSliceBufferAllocator(sliceBufferSize));
 
             const std::unique_ptr<IIngestor>
                 ingestor(Factories::CreateIngestor(schema,
@@ -358,15 +368,6 @@ namespace BitFunnel
         }
 
         /*
-        size_t GetBufferSize(DocIndex capacity,
-                             std::vector<RowIndex> const & rowCounts,
-                             IDocumentDataSchema const & schema)
-        {
-            EmptyTermTable termTable(rowCounts);
-            return Shard::InitializeDescriptors(nullptr, capacity, schema, termTable);
-        }
-
-
         TEST(BufferSizeTest, Trivial)
         {
             static const DocIndex c_capacityQuanta = 4096;

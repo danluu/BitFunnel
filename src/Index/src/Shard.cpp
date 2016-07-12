@@ -53,7 +53,7 @@ namespace BitFunnel
                                   docDataSchema,
                                   termTable);
 
-        LogAssertB(bufferSize < sliceBufferSize,
+        LogAssertB(bufferSize <= sliceBufferSize,
                    "Shard sliceBufferSize too small.");
     }
 
