@@ -195,9 +195,10 @@ namespace BitFunnel
 
         // Calculates the number of documents which can be hosted in a slice
         // buffer of the given byte size.
-        //static DocIndex GetCapacityForByteSize(size_t bufferByteSize,
-        //                                       IDocumentDataSchema const & schema,
-        //                                       ITermTable const & termTable);
+        static DocIndex
+            GetCapacityForByteSize(size_t bufferByteSize,
+                                   IDocumentDataSchema const & schema,
+                                   ITermTable const & termTable);
 
     private:
         // Tries to add a new slice. Throws if no memory in the allocator.
