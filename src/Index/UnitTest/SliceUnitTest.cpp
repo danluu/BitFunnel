@@ -315,7 +315,7 @@ namespace BitFunnel
                     reinterpret_cast<uint8_t*>(sliceBuffer) + offset;
                 for (unsigned i = 0; i < shard.GetSliceCapacity() / 8; ++i)
                 {
-                    EXPECT_EQ(*matchAllRowData, 0xFF);
+                    ASSERT_EQ(*matchAllRowData, 0xFF);
                     matchAllRowData++;
                 }
             }

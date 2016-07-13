@@ -20,8 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include <iostream>
-
 #include "BitFunnel/Exceptions.h"
 #include "BitFunnel/Index/IIngestor.h"
 #include "IRecyclable.h"
@@ -43,6 +41,7 @@ namespace BitFunnel
                  size_t sliceBufferSize)
         : m_ingestor(ingestor),
           m_id(id),
+          m_termTable(termTable),
           m_sliceBufferAllocator(sliceBufferAllocator),
           m_activeSlice(nullptr),
           m_sliceBuffers(new std::vector<void*>()),
@@ -175,7 +174,6 @@ namespace BitFunnel
                                       newSuggestedCapacity,
                                       schema,
                                       termTable);
-            std::cout << newBufferSize << ":" << bufferSizeInBytes << std::endl;
             if (newBufferSize > bufferSizeInBytes)
             {
                 break;
@@ -200,6 +198,12 @@ namespace BitFunnel
     {
         // A pointer to a Slice is placed in the end of the slice buffer.
         return m_sliceBufferSize - sizeof(void*);
+    }
+
+
+    ITermTable const & Shard::GetTermTable() const
+    {
+        return m_termTable;
     }
 
 
@@ -241,8 +245,6 @@ namespace BitFunnel
 
         const size_t sliceBufferSize = static_cast<size_t>(currentOffset);
 
-        std::cout << "InitializeDescriptors (" << sliceCapacity
-                  << ":" << sliceBufferSize << std::endl;
         return sliceBufferSize;
     }
 
