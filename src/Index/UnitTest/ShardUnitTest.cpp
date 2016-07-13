@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#include <iostream>  // TODO: remove.
+
 #include <future>
 
 #include "gtest/gtest.h"
@@ -44,7 +46,17 @@ namespace BitFunnel
 {
     namespace ShardUnitTest
     {
-        const size_t c_blockAllocatorBlockCount = 10;
+        // const size_t c_blockAllocatorBlockCount = 10;
+
+
+        size_t GetBufferSize(DocIndex capacity,
+                             std::vector<RowIndex> const & rowCounts,
+                             IDocumentDataSchema const & schema)
+        {
+            EmptyTermTable termTable(rowCounts);
+            return Shard::InitializeDescriptors(nullptr, capacity, schema, termTable);
+        }
+
 
         void TestSliceBuffers(Shard const & shard, std::vector<Slice*> const & allocatedSlices)
         {
@@ -63,7 +75,7 @@ namespace BitFunnel
         }
 
 
-        TEST(BasicTest, Trivial)
+        TEST(BasicShardTest, Trivial)
         {
             DocumentDataSchema schema;
 
@@ -90,7 +102,7 @@ namespace BitFunnel
 
             Shard& shard = ingestor->GetShard(0);
 
-            EXPECT_EQ(&shard.GetIndex(), &index.GetIndex());
+            // EXPECT_EQ(&shard.GetIndex(), &index->GetIndex());
             EXPECT_EQ(shard.GetSliceCapacity(), c_sliceCapacity);
 
             Slice* currentSlice = nullptr;
@@ -109,7 +121,7 @@ namespace BitFunnel
                     {
                         // We must have advanced to another slice, so should have a new value
                         // of the Slice*.
-                        TestNotEqual(handle.GetSlice(), currentSlice);
+                        EXPECT_NE(handle.GetSlice(), currentSlice);
                     }
 
                     currentSlice = handle.GetSlice();
@@ -127,91 +139,21 @@ namespace BitFunnel
                 TestSliceBuffers(shard, allocatedSlices);
             }
 
+            std::cout << "Ingestor shutdown.\n" << std::endl << std::flush;
             ingestor->Shutdown();
+            std::cout << "Recycler shutdown.\n" << std::endl << std::flush;
             recycler->Shutdown();
+            std::cout << "Shutdowns done.\n" << std::endl << std::flush;
         }
 
 
-    //     // A thread that simulates query thread activity. This thread simulates bits operations in
-    //     // the RowTables across all ranks and DocTable operations in all DocIndex values in all
-    //     // slice buffers in the Shard. Design intent is to simulate highly intense query thread
-    //     // activity which would test the slice buffers with high frequency, while performing adding
-    //     // or removing of slice buffers. Adding/removing os slice buffers has to be thread safe and
-    //     // a query thread should never access the memory which has been deallocated.
-    //     class QueryThread : public IThreadBase
-    //     {
-    //     public:
-    //         QueryThread(Shard& shard, volatile bool& isExiting);
-
-    //         virtual void EntryPoint() override;
-
-    //     private:
-    //         Shard& m_shard;
-    //         volatile bool& m_isExiting;
-    //     };
-
-
-    //     QueryThread::QueryThread(Shard& shard, volatile bool& isExiting)
-    //         : m_shard(shard),
-    //           m_isExiting(isExiting)
-    //     {
-    //     }
-
-
-    //     void QueryThread::EntryPoint()
-    //     {
-    //         for (;;)
-    //         {
-    //             if (m_isExiting)
-    //             {
-    //                 return;
-    //             }
-
-    //             ITermTable const & termTable(m_shard.GetTermTable());
-
-    //             const Token token = m_shard.GetIndex().GetTokenManager().RequestToken();
-
-    //             std::vector<void*> const & sliceBuffers = m_shard.GetSliceBuffers();
-    //             for (const auto sliceBuffer : sliceBuffers)
-    //             {
-    //                 for (Rank r = 0; r <= c_maxRankValue; ++r)
-    //                 {
-    //                     RowTableDescriptor const & rowTable = m_shard.GetRowTable(r);
-    //                     const unsigned quadwordCount = m_shard.GetSliceCapacity() / (1 << (6 + r));
-
-    //                     const RowIndex rowCount = termTable.GetTotalRowCount(DDRTier, r);
-    //                     for (RowIndex row = 0; row < rowCount; ++row)
-    //                     {
-    //                         unsigned __int64 *quadword = reinterpret_cast<unsigned __int64*>(
-    //                             reinterpret_cast<char*>(sliceBuffer) + rowTable.GetRowOffset(row));
-
-    //                         for (unsigned i = 0; i < quadwordCount; ++i)
-    //                         {
-    //                             // Don't need the value of the quadword, just need to simulate access to it.
-    //                             *quadword;
-    //                             ++quadword;
-    //                         }
-    //                     }
-    //                 }
-
-    //                 // Simulate access to DocTable.
-    //                 DocTableDescriptor const & docTable = m_shard.GetDocTable();
-    //                 for (DocIndex i = 0; i < m_shard.GetSliceCapacity(); ++i)
-    //                 {
-    //                     docTable.GetDocId(sliceBuffer, i);
-    //                 }
-    //             }
-    //         }
-    //     }
-
-
-    //     // Returns the buffer size required to host a Slice with given schema properties.
-    //     size_t GetRequiredBufferSize(DocIndex capacity,
-    //                                  IDocumentDataSchema const & docDataSchema,
-    //                                  ITermTable const & termTable)
-    //     {
-    //         return Shard::InitializeDescriptors(nullptr, capacity, docDataSchema, termTable);
-    //     }
+        // Returns the buffer size required to host a Slice with given schema properties.
+        size_t GetRequiredBufferSize(DocIndex capacity,
+                                     IDocumentDataSchema const & docDataSchema,
+                                     ITermTable const & termTable)
+        {
+            return Shard::InitializeDescriptors(nullptr, capacity, docDataSchema, termTable);
+        }
 
 
     //     TEST(AddRemoveSliceTest, Trivial)
@@ -266,7 +208,7 @@ namespace BitFunnel
     //                 {
     //                     // We must have advanced to another slice, so should have a new value
     //                     // of the Slice*.
-    //                     TestNotEqual(handle.GetSlice(), currentSlice);
+    //                     EXPECT_NE(handle.GetSlice(), currentSlice);
     //                 }
 
     //                 currentSlice = handle.GetSlice();
@@ -345,15 +287,6 @@ namespace BitFunnel
     //     }
 
 
-    //     size_t GetBufferSize(DocIndex capacity,
-    //                          std::vector<RowIndex> const & rowCounts,
-    //                          IDocumentDataSchema const & schema)
-    //     {
-    //         EmptyTermTable termTable(rowCounts);
-    //         return Shard::InitializeDescriptors(nullptr, capacity, schema, termTable);
-    //     }
-
-
     //     TEST(BufferSizeTest, Trivial)
     //     {
     //         static const DocIndex c_capacityQuanta = 4096;
@@ -429,4 +362,5 @@ namespace BitFunnel
     //         EXPECT_EQ(Shard::GetCapacityForByteSize(progressiveBufferSize * 123 + c_sizeOfSlicePtr, schema, termTable), c_capacityQuanta * 123);
     //     }
     // }
+    }
 }
