@@ -20,8 +20,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include <iostream> // TODO: remove.
-
 #include <unordered_set>
 #include <future>
 
@@ -320,56 +318,57 @@ namespace BitFunnel
                 }
             }
 
-            // const DocId c_anyDocId = 1234;
-            // const DocId c_anyDocIndex = 32;
-            // const size_t c_anyBlobSize = 10;
-            // const char c_anyBlobValue = 32;
+            const DocId c_anyDocId = 1234;
+            const DocId c_anyDocIndex = 32;
+            const size_t c_anyBlobSize = 10;
+            const char c_anyBlobValue = 32;
 
-            // // DocTable operations.
-            // slice.GetDocTable().SetDocId(sliceBuffer, c_anyDocIndex, c_anyDocId);
-            // EXPECT_EQ(slice.GetDocTable().GetDocId(sliceBuffer, c_anyDocIndex), c_anyDocId);
+            // DocTable operations.
+            slice.GetDocTable().SetDocId(sliceBuffer, c_anyDocIndex, c_anyDocId);
+            EXPECT_EQ(slice.GetDocTable().GetDocId(sliceBuffer, c_anyDocIndex), c_anyDocId);
 
-            // void* blobValue = slice.GetDocTable().GetVariableSizeBlob(sliceBuffer, c_anyDocIndex, varBlobId0);
-            // TestAssert(blobValue == nullptr);
+            const VariableSizeBlobId varBlobId0 = schema.RegisterVariableSizeBlob();
+            void* blobValue = slice.GetDocTable().GetVariableSizeBlob(sliceBuffer, c_anyDocIndex, varBlobId0);
+            EXPECT_EQ(blobValue, nullptr);
 
-            // blobValue = slice.GetDocTable().AllocateVariableSizeBlob(sliceBuffer, c_anyDocIndex, varBlobId0, c_anyBlobSize);
-            // TestAssert(blobValue != nullptr);
-            // memset(blobValue, c_anyBlobValue, c_anyBlobSize);
+            blobValue = slice.GetDocTable().AllocateVariableSizeBlob(sliceBuffer, c_anyDocIndex, varBlobId0, c_anyBlobSize);
+            ASSERT_NE(blobValue, nullptr);
+            memset(blobValue, c_anyBlobValue, c_anyBlobSize);
 
-            // // RowTable operations.
-            // for (DocIndex i = 0; i < c_sliceCapacity; ++i)
-            // {
-            //     for (Rank rank = 0; rank <= c_maxRankValue; ++rank)
-            //     {
-            //         RowTableDescriptor const & rowTable = slice.GetRowTable(rank);
+            // RowTable operations.
+            for (DocIndex i = 0; i < c_sliceCapacity; ++i)
+            {
+                for (Rank rank = 0; rank <= c_maxRankValue; ++rank)
+                {
+                    RowTableDescriptor const & rowTable = slice.GetRowTable(rank);
 
-            //         for (RowIndex row = 0; row < rowCounts[rank]; ++row)
-            //         {
-            //             if (row == matchAllRowId.GetIndex())
-            //             {
-            //                 TestAssert(rowTable.GetBit(sliceBuffer, row, i) == 1);
-            //             }
-            //             else
-            //             {
-            //                 TestAssert(rowTable.GetBit(sliceBuffer, row, i) == 0);
-            //             }
-            //         }
-            //     }
-            // }
+                    for (RowIndex row = 0; row < rowCounts[rank]; ++row)
+                    {
+                        if (row == matchAllRowId.GetIndex())
+                        {
+                            EXPECT_EQ(rowTable.GetBit(sliceBuffer, row, i), 1u);
+                        }
+                        else
+                        {
+                            EXPECT_EQ(rowTable.GetBit(sliceBuffer, row, i), 0u);
+                        }
+                    }
+                }
+            }
 
-            // for (DocIndex i = 0; i < c_sliceCapacity; ++i)
-            // {
-            //     for (Rank rank = 0; rank <= c_maxRankValue; ++rank)
-            //     {
-            //         RowTableDescriptor const & rowTable = slice.GetRowTable(rank);
+            for (DocIndex i = 0; i < c_sliceCapacity; ++i)
+            {
+                for (Rank rank = 0; rank <= c_maxRankValue; ++rank)
+                {
+                    RowTableDescriptor const & rowTable = slice.GetRowTable(rank);
 
-            //         for (RowIndex row = 0; row < rowCounts[rank]; ++row)
-            //         {
-            //             rowTable.SetBit(sliceBuffer, row, i);
-            //             TestAssert(rowTable.GetBit(sliceBuffer, row, i) > 0);
-            //         }
-            //     }
-            // }
+                    for (RowIndex row = 0; row < rowCounts[rank]; ++row)
+                    {
+                        rowTable.SetBit(sliceBuffer, row, i);
+                        EXPECT_GT(rowTable.GetBit(sliceBuffer, row, i), 0);
+                    }
+                }
+            }
 
             ingestor->Shutdown();
             recycler->Shutdown();
