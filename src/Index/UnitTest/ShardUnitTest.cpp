@@ -46,7 +46,7 @@ namespace BitFunnel
 {
     namespace ShardUnitTest
     {
-        // const size_t c_blockAllocatorBlockCount = 10;
+        const size_t c_blockAllocatorBlockCount = 10;
 
 
         size_t GetBufferSize(DocIndex capacity,
@@ -154,135 +154,122 @@ namespace BitFunnel
         }
 
 
-    //     TEST(AddRemoveSliceTest, Trivial)
-    //     {
-    //         // A number of thread that simulate querying activity.
-    //         static const unsigned c_threadCount = 10;
+        TEST(AddRemoveSliceTest, Trivial)
+        {
+            DocumentDataSchema schema;
 
-    //         // Timeout for query threads to exit after they have been signaled to.
-    //         static const unsigned c_queryThreadsExitTimeoutMS = 10000;
+            std::unique_ptr<IRecycler> recycler =
+                std::unique_ptr<IRecycler>(new Recycler());
+            auto background = std::async(std::launch::async, &IRecycler::Run, recycler.get());
 
-    //         static const DocIndex c_sliceCapacity = Row::DocumentsInRank0Row(1);
+            static const std::vector<RowIndex>
+                rowCounts = { c_systemRowCount, 0, 0, 1, 0, 0, 1 };
+            std::shared_ptr<ITermTable const>
+                termTable(new EmptyTermTable(rowCounts));
 
-    //         static const std::vector<RowIndex> rowCounts = { 100, 0, 0, 200, 0, 0, 300 };
-    //         std::shared_ptr<ITermTable const> termTable(new EmptyTermTable(rowCounts));
+            static const DocIndex c_sliceCapacity = Row::DocumentsInRank0Row(1);
+            const size_t sliceBufferSize = GetBufferSize(c_sliceCapacity, rowCounts, schema);
 
-    //         DocumentDataSchema schema;
+            std::unique_ptr<TrackingSliceBufferAllocator> trackingAllocator(
+                new TrackingSliceBufferAllocator(sliceBufferSize));
 
-    //         const size_t sliceBufferSize = GetRequiredBufferSize(c_sliceCapacity, schema, *termTable);
-    //         std::unique_ptr<ISliceBufferAllocator> sliceBufferAllocator(
-    //             new TrackingSliceBufferAllocator(sliceBufferSize));
-    //         TrackingSliceBufferAllocator& trackingAllocator
-    //             = dynamic_cast<TrackingSliceBufferAllocator&>(*sliceBufferAllocator);
+            const std::unique_ptr<IIngestor>
+                ingestor(Factories::CreateIngestor(schema,
+                                                   *recycler,
+                                                   *termTable,
+                                                   *trackingAllocator));
 
-    //         IndexWrapper index(c_sliceCapacity, termTable, schema, sliceBufferAllocator);
-    //         Shard& shard = index.GetShard();
+            Shard& shard = ingestor->GetShard(0);
 
-    //         // A signal for query threads to exit.
-    //         volatile bool isExiting = false;
+            Slice* currentSlice = nullptr;
+            std::vector<Slice*> allocatedSlices;
+            TestSliceBuffers(shard, allocatedSlices);
 
-    //         // Create query threads.
-    //         std::vector<IThreadBase*> queryThreads;
-    //         for (unsigned i = 0; i < c_threadCount; ++i)
-    //         {
-    //             queryThreads.push_back(new QueryThread(shard, isExiting));
-    //         }
+            for (DocIndex i = 0; i < c_sliceCapacity * c_blockAllocatorBlockCount; ++i)
+            {
+                const DocId docId = static_cast<DocId>(i) + 1234;
 
-    //         std::unique_ptr<IThreadManager> threadManager(Factories::CreateThreadManager(queryThreads));
+                const DocumentHandleInternal handle = shard.AllocateDocument();
 
-    //         Slice* currentSlice = nullptr;
-    //         std::vector<Slice*> allocatedSlices;
-    //         TestSliceBuffers(shard, allocatedSlices);
+                if ((i % c_sliceCapacity) == 0)
+                {
+                    if (currentSlice != nullptr)
+                    {
+                        // We must have advanced to another slice, so should have a new value
+                        // of the Slice*.
+                        EXPECT_NE(handle.GetSlice(), currentSlice);
+                    }
 
-    //         for (DocIndex i = 0; i < c_sliceCapacity * c_blockAllocatorBlockCount; ++i)
-    //         {
-    //             const DocId docId = static_cast<DocId>(i) + 1234;
+                    currentSlice = handle.GetSlice();
+                    allocatedSlices.push_back(currentSlice);
+                    EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), allocatedSlices.size());
+                }
 
-    //             const DocumentHandleInternal handle = shard.AllocateDocument();
+                currentSlice->GetDocTable().SetDocId(currentSlice->GetSliceBuffer(),
+                                                     i % c_sliceCapacity,
+                                                     docId);
 
-    //             if ((i % c_sliceCapacity) == 0)
-    //             {
-    //                 if (currentSlice != nullptr)
-    //                 {
-    //                     // We must have advanced to another slice, so should have a new value
-    //                     // of the Slice*.
-    //                     EXPECT_NE(handle.GetSlice(), currentSlice);
-    //                 }
+                currentSlice->CommitDocument();
 
-    //                 currentSlice = handle.GetSlice();
-    //                 allocatedSlices.push_back(currentSlice);
-    //                 EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), allocatedSlices.size());
-    //             }
+                // TODO: restore after DocId is implemented.
+                // EXPECT_EQ(handle.GetDocId(), docId);
+                EXPECT_EQ(handle.GetIndex(), i % c_sliceCapacity);
+                EXPECT_EQ(handle.GetSlice(), currentSlice);
 
-    //             currentSlice->GetDocTable().SetDocId(currentSlice->GetSliceBuffer(),
-    //                                                  i % c_sliceCapacity,
-    //                                                  docId);
+                TestSliceBuffers(shard, allocatedSlices);
+                EXPECT_EQ(shard.GetUsedCapacityInBytes(), allocatedSlices.size() * sliceBufferSize);
+            }
 
-    //             currentSlice->CommitDocument(handle.GetIndex());
+            // Start removing slices one by one.
+            while (!allocatedSlices.empty())
+            {
+                Slice* const slice = allocatedSlices.back();
 
-    //             EXPECT_EQ(handle.GetDocId(), docId);
-    //             EXPECT_EQ(handle.GetIndex(), i % c_sliceCapacity);
-    //             EXPECT_EQ(handle.GetSlice(), currentSlice);
+                for (DocIndex i = 0; i < c_sliceCapacity; ++i)
+                {
+                    if (i == c_sliceCapacity - 1)
+                    {
+                        // Trying to recycle non-expired slice buffer - expect exception.
+                        EXPECT_ANY_THROW(shard.RecycleSlice(*slice));
+                    }
 
-    //             TestSliceBuffers(shard, allocatedSlices);
-    //             EXPECT_EQ(shard.GetUsedCapacityInBytes(), allocatedSlices.size() * sliceBufferSize);
-    //         }
+                    slice->ExpireDocument();
+                }
 
-    //         // Start removing slices one by one.
-    //         while (!allocatedSlices.empty())
-    //         {
-    //             Slice* const slice = allocatedSlices.back();
+                TestSliceBuffers(shard, allocatedSlices);
 
-    //             for (DocIndex i = 0; i < c_sliceCapacity; ++i)
-    //             {
-    //                 if (i == c_sliceCapacity - 1)
-    //                 {
-    //                     // Trying to recycle non-expired slice buffer - expect exception.
-    //                     ExpectException([&]()
-    //                     {
-    //                         shard.RecycleSlice(*slice);
-    //                     });
-    //                 }
+                shard.RecycleSlice(*slice);
+                allocatedSlices.pop_back();
 
-    //                 slice->ExpireDocument(i);
-    //             }
+                TestSliceBuffers(shard, allocatedSlices);
+                EXPECT_EQ(shard.GetUsedCapacityInBytes(), allocatedSlices.size() * sliceBufferSize);
+            }
 
-    //             TestSliceBuffers(shard, allocatedSlices);
+            // Totally arbitrary time to allow recycler thread to recycle in time.
+            static const auto c_sleepTime = std::chrono::milliseconds(2);
+            std::this_thread::sleep_for(c_sleepTime);
+            EXPECT_EQ(trackingAllocator->GetInUseBuffersCount(), 0u);
 
-    //             shard.RecycleSlice(*slice);
-    //             allocatedSlices.pop_back();
+            // Trying to recycle a Slice which is not known to Shard - expect exception.
+            // First add at least one Slice.
+            shard.AllocateDocument();
 
-    //             TestSliceBuffers(shard, allocatedSlices);
-    //             EXPECT_EQ(shard.GetUsedCapacityInBytes(), allocatedSlices.size() * sliceBufferSize);
-    //         }
+            Slice slice(shard);
+            for (DocIndex i = 0; i < shard.GetSliceCapacity(); ++i)
+            {
+                DocIndex docIndex = 0;
+                EXPECT_TRUE(slice.TryAllocateDocument(docIndex));
+                slice.CommitDocument();
 
-    //         isExiting = true;
+                const bool isExpired = slice.ExpireDocument();
+                EXPECT_TRUE(isExpired == (i == shard.GetSliceCapacity() - 1));
+            }
 
-    //         const bool hasQueryThreadsExited = threadManager->WaitForThreads(c_queryThreadsExitTimeoutMS);
-    //         TestAssert(hasQueryThreadsExited);
+            EXPECT_ANY_THROW(shard.RecycleSlice(slice));
 
-    //         EXPECT_EQ(trackingAllocator.GetInUseBuffersCount(), 0);
-
-    //         // Trying to recycle a Slice which is not known to Shard - expect exception.
-    //         // First add at least one Slice.
-    //         shard.AllocateDocument();
-
-    //         Slice slice(shard);
-    //         for (DocIndex i = 0; i < shard.GetSliceCapacity(); ++i)
-    //         {
-    //             DocIndex docIndex = 0;
-    //             TestAssert(slice.TryAllocateDocument(docIndex));
-    //             slice.CommitDocument(docIndex);
-
-    //             const bool isExpired = slice.ExpireDocument(docIndex);
-    //             TestAssert(isExpired == (i == shard.GetSliceCapacity() - 1));
-    //         }
-
-    //         ExpectException([&] ()
-    //         {
-    //             shard.RecycleSlice(slice);
-    //         });
-    //     }
+            ingestor->Shutdown();
+            recycler->Shutdown();
+        }
 
 
     //     TEST(BufferSizeTest, Trivial)

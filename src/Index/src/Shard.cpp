@@ -175,6 +175,14 @@ namespace BitFunnel
     }
 
 
+    size_t Shard::GetUsedCapacityInBytes() const
+    {
+        // TODO: does this really need to be locked?
+        std::lock_guard<std::mutex> lock(m_slicesLock);
+        return m_sliceBuffers.load()->size() * m_sliceBufferSize;
+    }
+
+
     std::vector<void*> const & Shard::GetSliceBuffers() const
     {
         return *m_sliceBuffers;

@@ -180,7 +180,7 @@ namespace BitFunnel
         void ReleaseSliceBuffer(void* sliceBuffer);
 
         // Returns the size in bytes of the used capacity in the Shard.
-        //unsigned __int64 GetUsedCapacityInBytes() const;
+        size_t GetUsedCapacityInBytes() const;
 
         // Returns the buffer size required to store a single Slice based on
         // the capacity and schema. If the optional Shard argument is provided,
