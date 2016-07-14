@@ -132,18 +132,16 @@ namespace BitFunnel
                                                      i % c_sliceCapacity,
                                                      docId);
 
-                EXPECT_EQ(handle.GetDocId(), docId);
+                // TODO: fix this after docId is implemented.
+                // EXPECT_EQ(handle.GetDocId(), docId);
                 EXPECT_EQ(handle.GetIndex(), i % c_sliceCapacity);
                 EXPECT_EQ(handle.GetSlice(), currentSlice);
 
                 TestSliceBuffers(shard, allocatedSlices);
             }
 
-            std::cout << "Ingestor shutdown.\n" << std::endl << std::flush;
             ingestor->Shutdown();
-            std::cout << "Recycler shutdown.\n" << std::endl << std::flush;
             recycler->Shutdown();
-            std::cout << "Shutdowns done.\n" << std::endl << std::flush;
         }
 
 
