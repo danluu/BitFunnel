@@ -22,6 +22,7 @@
 
 
 #include <future>
+#include <limits>
 #include <memory>
 #include <string>
 
@@ -43,14 +44,35 @@
 // #include "EmptyTermTable.h"
 #include "Recycler.h"
 // #include "Slice.h"
+#include "BitFunnel/Term.h"
 #include "TrackingSliceBufferAllocator.h"
 
 
 namespace BitFunnel
 {
     class IConfiguration;
+
+
+    std::vector<std::string> GenerateDocumentText(unsigned docId)
+    {
+        std::vector<std::string> terms;
+        for (int i = 0; i < 32 && docId != 0; ++i)
+        {
+            if (docId & 1)
+            {
+                terms.push_back(std::to_string(i));
+            }
+            docId >>= 1;
+        }
+        return terms;
+    }
+
+
     namespace IngestorTest
     {
+        const size_t c_maxGramSize = 1;
+        const Term::StreamId c_streamId = 0;
+
         class MyIndex
         {
         public:
@@ -65,11 +87,23 @@ namespace BitFunnel
                     std::unique_ptr<IRecycler>(new Recycler());
                 m_recyclerHandle = std::async(std::launch::async, &IRecycler::Run, m_recycler.get());
 
-                std::unique_ptr<MockTermTable> termTable(new MockTermTable(c_shardId));
+                m_termTable.reset(new MockTermTable(c_shardId));
 
                 static const DocIndex c_sliceCapacity = Row::DocumentsInRank0Row(1);
-                // TODO: add terms to term table.
-                const size_t sliceBufferSize = GetBufferSize(c_sliceCapacity, schema, *termTable);
+
+                auto terms = GenerateDocumentText(std::numeric_limits<unsigned>::max());
+                for (const auto & term : terms)
+                {
+                    // The third argument is the idf, which is currently ignored.
+                    Term tt(Term::ComputeRawHash(term.c_str()), c_streamId, 0);
+                    // The second argument is currently ignored.
+                    // The third argument is the number of rows, which must be 1 for now because we only support private rows.
+                    m_termTable->AddTerm(tt.GetRawHash(), 0, 1);
+
+                }
+
+
+                const size_t sliceBufferSize = GetBufferSize(c_sliceCapacity, schema, *m_termTable);
 
                 m_allocator = std::unique_ptr<TrackingSliceBufferAllocator>(new TrackingSliceBufferAllocator(sliceBufferSize));
 
@@ -107,27 +141,12 @@ namespace BitFunnel
         };
 
 
-        std::vector<std::string> GenerateDocumentText(unsigned docId)
-        {
-            std::vector<std::string> terms;
-            for (int i = 0; i < 32 && docId != 0; ++i)
-            {
-                if (docId & 1)
-                {
-                    terms.push_back(std::to_string(i));
-                }
-                docId >>= 1;
-            }
-            return terms;
-        }
-
         // Ingests documents from 0..docCount, using a formula that maps those
         // numbers into documents.
         void AddDocumentsToIngestor(IIngestor& ingestor,
                                     IConfiguration const & config,
                                     unsigned docCount)
         {
-            const Term::StreamId c_streamId = 0;
             for (unsigned i = 0; i < docCount; ++i)
             {
                 std::unique_ptr<IDocument> document(new Document(config));
@@ -144,8 +163,6 @@ namespace BitFunnel
 
         TEST(Ingestor, InProgress)
         {
-            const size_t c_maxGramSize = 1;
-
             MyIndex index;
             Configuration config(c_maxGramSize);
 

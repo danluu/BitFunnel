@@ -166,6 +166,7 @@ namespace BitFunnel
         }
         else
         {
+            termKind = Explicit;
             auto it = m_entries.find(term.GetRawHash());
             LogAssertB(it != m_entries.end(),
                        "Term not found.");
