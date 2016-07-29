@@ -112,26 +112,15 @@ int main()
     funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.9999999));
 
     std::uniform_int_distribution<> uniform(1, 10000);
+    std::vector<std::string> names {"uniform-20", "bf-old", "bf-new"};
 
-    // for (int i = 1; i <= MAX_NUM_ROWS; ++i) {
-    //     std::cout << i;
-    //     if (i <= MAX_NUM_ROWS-1) {
-    //         std::cout << ",";
-    //     }
-    // }
-    // std::cout << std::endl;
-
-    auto block_depth = run_once(gen, base_dist, MAX_NUM_ROWS,
-                                funny_dist, uniform,
-                                "uniform-20");
-    for (const auto & dd : block_depth) {
-        std::cout << dd.first << "," << dd.second << ",uniform20" << std::endl;
-    }
-    block_depth = run_once(gen, base_dist, MAX_NUM_ROWS,
-                           funny_dist, uniform,
-                           "bf-old");
-    for (const auto & dd : block_depth) {
-        std::cout << dd.first << "," << dd.second << ",actual" << std::endl;
+    for (auto const & name : names) {
+        auto block_depth = run_once(gen, base_dist, MAX_NUM_ROWS,
+                                    funny_dist, uniform,
+                                    name);
+        for (const auto & dd : block_depth) {
+            std::cout << dd.first << "," << dd.second << "," << name << std::endl;
+       }
     }
     return 0;
 }
