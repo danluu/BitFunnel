@@ -7,7 +7,7 @@
 #define MAX_NUM_ROWS 20
 // #define NUM_ITERS 10
 #define BLOCK_SIZE 512 // cache line size in bits.
-#define NUM_BLOCKS 1000
+#define NUM_BLOCKS 1000000
 #define NUM_DOCS BLOCK_SIZE * NUM_BLOCKS
 
 // DESIGN NOTE: tried using go, but the publicly available binomial rng is approximately 10x slower.
@@ -47,8 +47,28 @@ int16_t funny_draw(std::mt19937& gen,
     return funny_dist[bin](gen);
 }
 
+int16_t draw_block(std::mt19937& gen,
+                   std::vector<std::binomial_distribution<int16_t>>& block_dist,
+                   std::vector<std::binomial_distribution<int16_t>>& funny_dist,
+                   std::uniform_int_distribution<>& uniform,
+                   std::vector<int> bin_dividers,
+                   std::string filename) {
+        if (filename == "uniform-20") {
+            return block_dist[2](gen);
+        } else if (filename == "split-10-40") {
+            if (uniform(gen) <= 8000) {
+                return block_dist[1](gen);
+            } else {
+                return block_dist[4](gen);
+            }
+        } else {
+            return funny_draw(gen, funny_dist, uniform, bin_dividers);
+        }
+        throw;
+        return 0;
+}
 
-std::unordered_map<int, int> run_once(std::mt19937& gen, std::binomial_distribution<int16_t>& base_dist, int num_rows,
+std::unordered_map<int, int> run_once(std::mt19937& gen, std::vector<std::binomial_distribution<int16_t>>& block_dist, int num_rows,
                                       std::vector<std::binomial_distribution<int16_t>>& funny_dist, std::uniform_int_distribution<>& uniform,
                                       std::string filename) {
     int num_accesses = 0;
@@ -59,28 +79,19 @@ std::unordered_map<int, int> run_once(std::mt19937& gen, std::binomial_distribut
     int local_depth;
 
     std::vector<int> bin_dividers;
-    if (filename != "uniform-20") {
+    if (filename != "uniform-20" && filename != "split-10-40") {
         bin_dividers = get_dividers(filename);
     }
 
     for (int i = 0; i < NUM_BLOCKS; ++i) {
         local_depth = 1;
-        if (filename == "uniform-20") {
-            block = base_dist(gen);
-        } else {
-            block = funny_draw(gen, funny_dist, uniform, bin_dividers);
-        }
+        block = draw_block(gen, block_dist, funny_dist, uniform, bin_dividers, filename);
         ++num_accesses;
         // Row 0 always gets accessed.
         // TODO: add extra access for soft-deleted row?
         for (int j = 1; j < num_rows && block != 0; ++j) {
             ++local_depth;
-            int16_t row_num_set;
-            if (filename == "uniform-20") {
-                row_num_set = base_dist(gen);
-            } else {
-                row_num_set = funny_draw(gen, funny_dist, uniform, bin_dividers);
-            }
+            int16_t row_num_set = draw_block(gen, block_dist, funny_dist, uniform, bin_dividers, filename);
             float previous_fraction = static_cast<float>(block) / 512.0;
             std::binomial_distribution<int16_t> intersection_dist(row_num_set,previous_fraction);
             block = intersection_dist(gen);
@@ -94,7 +105,11 @@ int main()
 {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::binomial_distribution<int16_t> base_dist(512, 0.2);
+    std::vector<std::binomial_distribution<int16_t>> block_dist;
+    for (float i = 0.0; i < 1.0; i += 0.1) {
+        std::binomial_distribution<int16_t> block_draw(512, i);
+        block_dist.push_back(block_draw);
+    }
 
     // Quick hack to generate a set of distributions that match the
     // distributions for a known bug.
@@ -112,10 +127,10 @@ int main()
     funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.9999999));
 
     std::uniform_int_distribution<> uniform(1, 10000);
-    std::vector<std::string> names {"uniform-20", "bf-old", "bf-new"};
+    std::vector<std::string> names {"uniform-20", "split-10-40", "bf-old", "bf-new"};
 
     for (auto const & name : names) {
-        auto block_depth = run_once(gen, base_dist, MAX_NUM_ROWS,
+        auto block_depth = run_once(gen, block_dist, MAX_NUM_ROWS,
                                     funny_dist, uniform,
                                     name);
         for (const auto & dd : block_depth) {
