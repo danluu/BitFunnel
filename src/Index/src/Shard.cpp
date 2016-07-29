@@ -168,6 +168,14 @@ namespace BitFunnel
     }
 
 
+    ptrdiff_t Shard::GetRowOffset(RowId rowId) const
+    {
+        // LogAssertB(rowId.IsValid(), "GetRowOffset on invalid row.");
+
+        return GetRowTable(rowId.GetRank()).GetRowOffset(rowId.GetIndex());
+    }
+
+
     RowTableDescriptor const & Shard::GetRowTable(Rank rank) const
     {
         return m_rowTables.at(rank);

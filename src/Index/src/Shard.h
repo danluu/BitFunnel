@@ -99,7 +99,7 @@ namespace BitFunnel
         virtual std::vector<void*> const & GetSliceBuffers() const;
 
         // Returns the offset of the row in the slice buffer in a shard.
-        //virtual ptrdiff_t GetRowOffset(RowId rowId) const override;
+        virtual ptrdiff_t GetRowOffset(RowId rowId) const;
 
         // Returns the offset in the slice buffer where a pointer to the Slice
         // is stored. This is the same offset for all slices in the Shard.

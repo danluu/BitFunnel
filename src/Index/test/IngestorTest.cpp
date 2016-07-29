@@ -43,6 +43,7 @@
  #include "MockTermTable.h"
 // #include "EmptyTermTable.h"
 #include "Recycler.h"
+#include "BitFunnel/TermInfo.h"
 // #include "Slice.h"
 #include "BitFunnel/Term.h"
 #include "TrackingSliceBufferAllocator.h"
@@ -56,13 +57,12 @@ namespace BitFunnel
     std::vector<std::string> GenerateDocumentText(unsigned docId)
     {
         std::vector<std::string> terms;
-        for (int i = 0; i < 32 && docId != 0; ++i)
+        for (int i = 0; i < 32 && docId != 0; ++i, docId >>= 1)
         {
             if (docId & 1)
             {
                 terms.push_back(std::to_string(i));
             }
-            docId >>= 1;
         }
         return terms;
     }
@@ -119,6 +119,7 @@ namespace BitFunnel
             {
                 m_ingestor->Shutdown();
                 m_recycler->Shutdown();
+                m_recyclerHandle.wait();
 
                 m_ingestor.reset();
                 m_termTable.reset();
@@ -127,9 +128,14 @@ namespace BitFunnel
                 m_allocator.reset();
             }
 
-            IIngestor & GetIngestor()
+            IIngestor & GetIngestor() const
             {
                 return *m_ingestor;
+            }
+
+            ITermTable & GetTermTable() const
+            {
+                return *m_termTable;
             }
 
         private:
@@ -141,32 +147,112 @@ namespace BitFunnel
         };
 
 
-        // Ingests documents from 0..docCount, using a formula that maps those
-        // numbers into documents.
-        void AddDocumentsToIngestor(IIngestor& ingestor,
-                                    IConfiguration const & config,
-                                    unsigned docCount)
+        class SyntheticIndex
         {
-            for (unsigned i = 0; i < docCount; ++i)
+        public:
+            SyntheticIndex(unsigned documentCount)
+              : m_config(c_maxGramSize),
+                m_documentCount(documentCount)
             {
-                std::unique_ptr<IDocument> document(new Document(config));
-                document->OpenStream(c_streamId);
-                auto terms = GenerateDocumentText(i);
-                for (const auto & term : terms)
-                {
-                    document->AddTerm(term.c_str());
-                }
-                document->CloseStream();
-                ingestor.Add(i, *document);
+                AddDocumentsToIngestor(m_index.GetIngestor(), m_config, m_documentCount);
             }
-        }
+
+            void VerifyQuery(unsigned query)
+            {
+                auto actualMatches = Match(query, m_index);
+                auto expectedMatches = Expected(query);
+                ASSERT_EQ(actualMatches.size(), expectedMatches.size());
+                for (unsigned i = 0; i < actualMatches.size(); ++i)
+                {
+                    EXPECT_EQ(actualMatches[i], expectedMatches[i]);
+                }
+            }
+        private:
+            // Ingests documents from 0..docCount, using a formula that maps those
+            // numbers into documents.
+            void AddDocumentsToIngestor(IIngestor& ingestor,
+                                        IConfiguration const & config,
+                                        unsigned docCount)
+            {
+                for (unsigned i = 0; i < docCount; ++i)
+                {
+                    std::unique_ptr<IDocument> document(new Document(config));
+                    document->OpenStream(c_streamId);
+                    auto terms = GenerateDocumentText(i);
+                    for (const auto & term : terms)
+                    {
+                        document->AddTerm(term.c_str());
+                    }
+                    document->CloseStream();
+                    ingestor.Add(i, *document);
+                }
+            }
+
+
+            bool DocumentMatchesQuery(unsigned document, unsigned query)
+            {
+                return (document | query) == document;
+            }
+
+
+            std::vector<unsigned> Expected(unsigned query)
+            {
+                std::vector<unsigned> results;
+                for (unsigned i = 0; i < m_documentCount; ++i)
+                {
+                    if (DocumentMatchesQuery(i, query))
+                    {
+                        results.push_back(i);
+                    }
+                }
+                return results;
+            }
+
+            std::vector<unsigned> Match(unsigned query, MyIndex const & index)
+            {
+                uint64_t accumulator = std::numeric_limits<uint64_t>::max();
+                std::vector<unsigned> results;
+                auto terms = GenerateDocumentText(query);
+                for (const auto & text : terms)
+                {
+                    Term term(Term::ComputeRawHash(text.c_str()), c_streamId, 0);
+                    TermInfo termInfo(term, index.GetTermTable());
+                    while (termInfo.MoveNext())
+                    {
+                        const RowId row = termInfo.Current();
+                        Shard & shard = index.GetIngestor().GetShard(0);
+                        auto rowOffset = shard.GetRowOffset(row);
+                        auto sliceBuffers = shard.GetSliceBuffers();
+                        auto base = static_cast<char*>(sliceBuffers[0]);
+                        auto ptr = base + rowOffset;
+                        accumulator &= *reinterpret_cast<uint64_t*>(ptr);
+                    }
+                }
+
+                for (unsigned i = 0; accumulator != 0; ++i, accumulator >>= 1)
+                {
+                    if (accumulator & 1)
+                    {
+                        results.push_back(i);
+                    }
+                }
+                return results;
+            }
+            Configuration m_config;
+            unsigned m_documentCount;
+            MyIndex m_index;
+        };
+
 
         TEST(Ingestor, InProgress)
         {
-            MyIndex index;
-            Configuration config(c_maxGramSize);
+            const int c_documentCount = 64;
+            SyntheticIndex index(c_documentCount);
 
-            AddDocumentsToIngestor(index.GetIngestor(), config, 2);
+            for (int i = 0; i < c_documentCount + 1; i++)
+            {
+                index.VerifyQuery(i);
+            }
         }
     }
 }
