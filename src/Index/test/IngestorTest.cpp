@@ -112,7 +112,6 @@ namespace BitFunnel
                                               *m_recycler,
                                               *m_termTable,
                                               *m_allocator);
-
             }
 
             ~MyIndex()
@@ -156,6 +155,13 @@ namespace BitFunnel
             {
                 AddDocumentsToIngestor(m_index.GetIngestor(), m_config, m_documentCount);
             }
+
+
+            IIngestor & GetIngestor() const
+            {
+                return m_index.GetIngestor();
+            }
+
 
             void VerifyQuery(unsigned query)
             {
@@ -244,7 +250,7 @@ namespace BitFunnel
         };
 
 
-        TEST(Ingestor, InProgress)
+        TEST(Ingestor, BasicSelfChecking)
         {
             const int c_documentCount = 64;
             SyntheticIndex index(c_documentCount);
@@ -253,6 +259,15 @@ namespace BitFunnel
             {
                 index.VerifyQuery(i);
             }
+        }
+
+
+        TEST(Ingestor, DocFrequency)
+        {
+            const int c_documentCount = 64;
+            SyntheticIndex index(c_documentCount);
+
+            index.GetIngestor().PrintStatistics();
         }
     }
 }

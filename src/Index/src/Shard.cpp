@@ -69,7 +69,9 @@ namespace BitFunnel
           m_sliceCapacity(GetCapacityForByteSize(sliceBufferSize,
                                                  docDataSchema,
                                                  termTable)),
-          m_sliceBufferSize(sliceBufferSize)
+          m_sliceBufferSize(sliceBufferSize),
+          // TODO: will need one global, not one per shard.
+          m_docFrequencyTableBuilder(new DocumentFrequencyTableBuilder())
     {
         const size_t bufferSize =
             InitializeDescriptors(this,
@@ -335,7 +337,8 @@ namespace BitFunnel
             // TODO: Remove this lock once it is incorporated into the frequency
             // table class.
             std::lock_guard<std::mutex> lock(m_temporaryFrequencyTableMutex);
-            m_temporaryFrequencyTable[term]++;
+            // m_temporaryFrequencyTable[term]++;
+            m_docFrequencyTableBuilder->OnTerm(term);
         }
     }
 
@@ -343,16 +346,7 @@ namespace BitFunnel
     void Shard::TemporaryPrintFrequencies(std::ostream& out)
     {
         out << "Term frequency table for shard " << m_id << ":" << std::endl;
-        for (auto it = m_temporaryFrequencyTable.begin();
-             it != m_temporaryFrequencyTable.end();
-             ++it)
-        {
-            out << "  ";
-            it->first.Print(out);
-            out << ": "
-                << it->second
-                << std::endl;
-        }
-        out << std::endl;
+        // TODO: 0.0 is the truncation frequency, which shouldn't be fixed at 0.
+        m_docFrequencyTableBuilder->WriteFrequencies(out, 0.0);
     }
 }

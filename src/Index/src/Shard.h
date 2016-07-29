@@ -36,6 +36,7 @@
 #include "BitFunnel/NonCopyable.h"
 #include "BitFunnel/Term.h"
 #include "DocTableDescriptor.h"              // Required for embedded std::unique_ptr.
+#include "DocumentFrequencyTableBuilder.h"   // std::unique_ptr to this.
 #include "DocumentHandleInternal.h"          // Return value.
 #include "RowTableDescriptor.h"              // Required for embedded std::vector.
 #include "Slice.h"                           // std::unique_ptr template parameter.
@@ -299,6 +300,6 @@ namespace BitFunnel
         std::vector<RowTableDescriptor> m_rowTables;
 
         std::mutex m_temporaryFrequencyTableMutex;
-        std::unordered_map<Term, size_t, Term::Hasher> m_temporaryFrequencyTable;
+        std::unique_ptr<DocumentFrequencyTableBuilder> m_docFrequencyTableBuilder;
     };
 }

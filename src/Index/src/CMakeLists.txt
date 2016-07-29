@@ -9,6 +9,7 @@ set(CPPFILES
     DocTableDescriptor.cpp
     Document.cpp
     DocumentDataSchema.cpp
+    DocumentFrequencyTableBuilder.cpp
     DocumentHandleInternal.cpp
     DocumentLengthHistogram.cpp
     FactSetBase.cpp
@@ -39,6 +40,7 @@ set(PRIVATE_HFILES
     DocTableDescriptor.h
     Document.h
     DocumentDataSchema.h
+    DocumentFrequencyTableBuilder.h
     DocumentHandleInternal.h
     DocumentLengthHistogram.h
     FactSetBase.h
