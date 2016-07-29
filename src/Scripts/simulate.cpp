@@ -1,3 +1,5 @@
+#include <cassert>
+#include <fstream>
 #include <iostream>
 #include <random>
 #include <unordered_map>
@@ -11,20 +13,24 @@
 // DESIGN NOTE: tried using go, but the publicly available binomial rng is approximately 10x slower.
 // TODO: change conventions to match BitFunnel coding conventions.
 
-int16_t funny_draw(std::mt19937& gen, std::vector<std::binomial_distribution<int16_t>>& funny_dist, std::uniform_int_distribution<>& uniform) {
+std::vector<int> get_dividers(std::string filename) {
+    std::ifstream data(filename);
+    int input;
+    std::vector<int> bin_dividers;
+    while (data >> input) {
+        bin_dividers.push_back(input);
+    }
+    assert(bin_dividers.size() == 10);
+    return bin_dividers;
+}
+
+
+int16_t funny_draw(std::mt19937& gen,
+                   std::vector<std::binomial_distribution<int16_t>>& funny_dist,
+                   std::uniform_int_distribution<>& uniform,
+                   std::vector<int>& bin_dividers) {
     auto pp = uniform(gen);
     int bin = -1;
-
-    std::vector<int> bin_dividers{3591,
-            7140,
-            9366,
-            9775,
-            9887,
-            9936,
-            9966,
-            9978,
-            9988,
-            9996};
 
     for (int i = 0; i < bin_dividers.size(); ++i) {
         if (pp <= bin_dividers[i]) {
@@ -33,7 +39,7 @@ int16_t funny_draw(std::mt19937& gen, std::vector<std::binomial_distribution<int
         }
     }
 
-    std::cout << pp << ":" << bin << std::endl;
+    // std::cout << pp << ":" << bin << std::endl;
     if (bin == -1) {
         return 512;
     }
@@ -43,8 +49,8 @@ int16_t funny_draw(std::mt19937& gen, std::vector<std::binomial_distribution<int
 
 
 std::unordered_map<int, int> run_once(std::mt19937& gen, std::binomial_distribution<int16_t>& base_dist, int num_rows,
-                                      bool use_funny_dist,
-                                      std::vector<std::binomial_distribution<int16_t>>& funny_dist, std::uniform_int_distribution<>& uniform) {
+                                      std::vector<std::binomial_distribution<int16_t>>& funny_dist, std::uniform_int_distribution<>& uniform,
+                                      std::string filename) {
     int num_accesses = 0;
     // TODO: check to see if doing these allocations inside run_once matters for performance.
     // We could hoist this out and just clear the vectors in here.
@@ -52,12 +58,17 @@ std::unordered_map<int, int> run_once(std::mt19937& gen, std::binomial_distribut
     int16_t block;
     int local_depth;
 
+    std::vector<int> bin_dividers;
+    if (filename != "uniform-20") {
+        bin_dividers = get_dividers(filename);
+    }
+
     for (int i = 0; i < NUM_BLOCKS; ++i) {
         local_depth = 1;
-        if (!use_funny_dist) {
+        if (filename == "uniform-20") {
             block = base_dist(gen);
         } else {
-            block = funny_draw(gen, funny_dist, uniform);
+            block = funny_draw(gen, funny_dist, uniform, bin_dividers);
         }
         ++num_accesses;
         // Row 0 always gets accessed.
@@ -65,10 +76,10 @@ std::unordered_map<int, int> run_once(std::mt19937& gen, std::binomial_distribut
         for (int j = 1; j < num_rows && block != 0; ++j) {
             ++local_depth;
             int16_t row_num_set;
-            if (!use_funny_dist) {
+            if (filename == "uniform-20") {
                 row_num_set = base_dist(gen);
             } else {
-                row_num_set = funny_draw(gen, funny_dist, uniform);
+                row_num_set = funny_draw(gen, funny_dist, uniform, bin_dividers);
             }
             float previous_fraction = static_cast<float>(block) / 512.0;
             std::binomial_distribution<int16_t> intersection_dist(row_num_set,previous_fraction);
@@ -111,14 +122,14 @@ int main()
     // std::cout << std::endl;
 
     auto block_depth = run_once(gen, base_dist, MAX_NUM_ROWS,
-                                false,
-                                funny_dist, uniform);
+                                funny_dist, uniform,
+                                "uniform-20");
     for (const auto & dd : block_depth) {
         std::cout << dd.first << "," << dd.second << ",uniform20" << std::endl;
     }
     block_depth = run_once(gen, base_dist, MAX_NUM_ROWS,
-                           true,
-                           funny_dist, uniform);
+                           funny_dist, uniform,
+                           "bf-old");
     for (const auto & dd : block_depth) {
         std::cout << dd.first << "," << dd.second << ",actual" << std::endl;
     }
