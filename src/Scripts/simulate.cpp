@@ -3,11 +3,12 @@
 #include <iostream>
 #include <random>
 #include <unordered_map>
+#include <utility>
 
-#define MAX_NUM_ROWS 20
+#define MAX_NUM_ROWS 40
 // #define NUM_ITERS 10
 #define BLOCK_SIZE 512 // cache line size in bits.
-#define NUM_BLOCKS 1000000
+#define NUM_BLOCKS 1000
 #define NUM_DOCS BLOCK_SIZE * NUM_BLOCKS
 
 // DESIGN NOTE: tried using go, but the publicly available binomial rng is approximately 10x slower.
@@ -55,8 +56,10 @@ int16_t draw_block(std::mt19937& gen,
                    std::string filename) {
         if (filename == "uniform-20") {
             return block_dist[2](gen);
+        } else if (filename == "uniform-50") {
+            return block_dist[5](gen);
         } else if (filename == "split-10-40") {
-            if (uniform(gen) <= 8000) {
+            if (uniform(gen) <= 6666) {
                 return block_dist[1](gen);
             } else {
                 return block_dist[4](gen);
@@ -68,9 +71,9 @@ int16_t draw_block(std::mt19937& gen,
         return 0;
 }
 
-std::unordered_map<int, int> run_once(std::mt19937& gen, std::vector<std::binomial_distribution<int16_t>>& block_dist, int num_rows,
-                                      std::vector<std::binomial_distribution<int16_t>>& funny_dist, std::uniform_int_distribution<>& uniform,
-                                      std::string filename) {
+std::pair<int, std::unordered_map<int, int>> run_once(std::mt19937& gen, std::vector<std::binomial_distribution<int16_t>>& block_dist, int num_rows,
+                                                      std::vector<std::binomial_distribution<int16_t>>& funny_dist, std::uniform_int_distribution<>& uniform,
+                                                      std::string filename) {
     int num_accesses = 0;
     // TODO: check to see if doing these allocations inside run_once matters for performance.
     // We could hoist this out and just clear the vectors in here.
@@ -79,7 +82,7 @@ std::unordered_map<int, int> run_once(std::mt19937& gen, std::vector<std::binomi
     int local_depth;
 
     std::vector<int> bin_dividers;
-    if (filename != "uniform-20" && filename != "split-10-40") {
+    if (filename != "uniform-20" && filename != "split-10-40" && filename != "uniform-50") {
         bin_dividers = get_dividers(filename);
     }
 
@@ -91,6 +94,7 @@ std::unordered_map<int, int> run_once(std::mt19937& gen, std::vector<std::binomi
         // TODO: add extra access for soft-deleted row?
         for (int j = 1; j < num_rows && block != 0; ++j) {
             ++local_depth;
+            ++num_accesses;
             int16_t row_num_set = draw_block(gen, block_dist, funny_dist, uniform, bin_dividers, filename);
             float previous_fraction = static_cast<float>(block) / 512.0;
             std::binomial_distribution<int16_t> intersection_dist(row_num_set,previous_fraction);
@@ -98,7 +102,25 @@ std::unordered_map<int, int> run_once(std::mt19937& gen, std::vector<std::binomi
         }
         ++block_depth[local_depth];
     }
-    return block_depth;
+    return std::make_pair(num_accesses, block_depth);
+}
+
+double get_density(std::string filename) {
+    if (filename == "uniform-20" || filename == "split-10-40") {
+        return .2;
+    } else if (filename == "uniform-50") {
+        return .5;
+    }
+    auto bin_dividers = get_dividers(filename);
+    int last_divider = 0;
+    double total_weight = 0.0;
+    double local_weight = 0.05;
+    for (int i = 0; i < bin_dividers.size(); ++i) {
+        total_weight += static_cast<double>(bin_dividers[i]-last_divider)/10000.0 * local_weight;
+        local_weight += 0.1;
+        last_divider = bin_dividers[i];
+    }
+    return total_weight;
 }
 
 int main()
@@ -127,12 +149,27 @@ int main()
     funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.9999999));
 
     std::uniform_int_distribution<> uniform(1, 10000);
-    std::vector<std::string> names {"uniform-20", "split-10-40", "bf-old", "bf-new"};
+    std::vector<std::string> names {"uniform-20", "uniform-50", "split-10-40", "bf-old", "bf-new"};
+    double baseline_dq = -1.0;
+    double baseline_q = -1.0;
 
     for (auto const & name : names) {
-        auto block_depth = run_once(gen, block_dist, MAX_NUM_ROWS,
+        auto result = run_once(gen, block_dist, MAX_NUM_ROWS,
                                     funny_dist, uniform,
                                     name);
+        auto block_depth = result.second;
+        int num_accesses = result.first;
+        double weight = get_density(name);
+        double raw_dq = weight / num_accesses;
+        if (baseline_dq == -1.0) {
+            baseline_dq = raw_dq;
+            baseline_q = 1.0/num_accesses;
+        }
+        double normalized_dq = raw_dq / baseline_dq;
+        double normalized_q = 1.0 / (baseline_q * num_accesses);
+        std::cout << num_accesses << ":" << weight << std::endl;
+        std::cout << "DQ: " << normalized_dq << std::endl;
+        std::cout << "Q:  " << normalized_q << std::endl;
         for (const auto & dd : block_depth) {
             std::cout << dd.first << "," << dd.second << "," << name << std::endl;
        }
