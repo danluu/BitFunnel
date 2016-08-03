@@ -5,14 +5,16 @@
 #include <unordered_map>
 #include <utility>
 
-#define MAX_NUM_ROWS 40
+#define MAX_NUM_ROWS 25
 // #define NUM_ITERS 10
 #define BLOCK_SIZE 512 // cache line size in bits.
-#define NUM_BLOCKS 1000
+#define NUM_BLOCKS 1000000
 #define NUM_DOCS BLOCK_SIZE * NUM_BLOCKS
 
 // DESIGN NOTE: tried using go, but the publicly available binomial rng is approximately 10x slower.
 // TODO: change conventions to match BitFunnel coding conventions.
+// TODO: general refactor of this monstronsity.
+// TODO: pack all distributions into a struct.
 
 std::vector<int> get_dividers(std::string filename) {
     std::ifstream data(filename);
@@ -73,6 +75,7 @@ int16_t draw_block(std::mt19937& gen,
 
 std::pair<int, std::unordered_map<int, int>> run_once(std::mt19937& gen, std::vector<std::binomial_distribution<int16_t>>& block_dist, int num_rows,
                                                       std::vector<std::binomial_distribution<int16_t>>& funny_dist, std::uniform_int_distribution<>& uniform,
+                                                      std::binomial_distribution<int16_t>& true_signal_dist,
                                                       std::string filename) {
     int num_accesses = 0;
     // TODO: check to see if doing these allocations inside run_once matters for performance.
@@ -87,18 +90,23 @@ std::pair<int, std::unordered_map<int, int>> run_once(std::mt19937& gen, std::ve
     }
 
     for (int i = 0; i < NUM_BLOCKS; ++i) {
-        local_depth = 1;
-        block = draw_block(gen, block_dist, funny_dist, uniform, bin_dividers, filename);
-        ++num_accesses;
-        // Row 0 always gets accessed.
-        // TODO: add extra access for soft-deleted row?
-        for (int j = 1; j < num_rows && block != 0; ++j) {
-            ++local_depth;
+        if (true_signal_dist(gen) > 0) {
+            local_depth = MAX_NUM_ROWS;
+            num_accesses += local_depth;
+        } else {
+            local_depth = 1;
+            block = draw_block(gen, block_dist, funny_dist, uniform, bin_dividers, filename);
             ++num_accesses;
-            int16_t row_num_set = draw_block(gen, block_dist, funny_dist, uniform, bin_dividers, filename);
-            float previous_fraction = static_cast<float>(block) / 512.0;
-            std::binomial_distribution<int16_t> intersection_dist(row_num_set,previous_fraction);
-            block = intersection_dist(gen);
+            // Row 0 always gets accessed.
+            // TODO: add extra access for soft-deleted row?
+            for (int j = 1; j < num_rows && block != 0; ++j) {
+                ++local_depth;
+                ++num_accesses;
+                int16_t row_num_set = draw_block(gen, block_dist, funny_dist, uniform, bin_dividers, filename);
+                float previous_fraction = static_cast<float>(block) / 512.0;
+                std::binomial_distribution<int16_t> intersection_dist(row_num_set,previous_fraction);
+                block = intersection_dist(gen);
+            }
         }
         ++block_depth[local_depth];
     }
@@ -135,6 +143,7 @@ int main()
 
     // Quick hack to generate a set of distributions that match the
     // distributions for a known bug.
+    // TODO: unify this and block_dist. There's no reason these should be distinct.
     std::vector<std::binomial_distribution<int16_t>> funny_dist;
     funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.05));
     funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.15));
@@ -153,10 +162,13 @@ int main()
     double baseline_dq = -1.0;
     double baseline_q = -1.0;
 
+    std::binomial_distribution<int16_t> true_signal_dist(512, 1.0/5000.0);
+
     for (auto const & name : names) {
         auto result = run_once(gen, block_dist, MAX_NUM_ROWS,
-                                    funny_dist, uniform,
-                                    name);
+                               funny_dist, uniform,
+                               true_signal_dist,
+                               name);
         auto block_depth = result.second;
         int num_accesses = result.first;
         double weight = get_density(name);
