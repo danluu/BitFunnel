@@ -145,16 +145,11 @@ int main()
     // distributions for a known bug.
     // TODO: unify this and block_dist. There's no reason these should be distinct.
     std::vector<std::binomial_distribution<int16_t>> funny_dist;
-    funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.05));
-    funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.15));
-    funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.25));
-    funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.35));
-    funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.45));
-    funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.55));
-    funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.65));
-    funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.75));
-    funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.85));
-    funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.95));
+    for (float i = 0.05; i < 1.0; i += 0.1) {
+        funny_dist.push_back(std::binomial_distribution<int16_t>(512, i));
+    }
+    // We don't insert 1 because that might (?) round to something > 1.0, and
+    // the library produces nonsensical results if you put in something > 1.
     funny_dist.push_back(std::binomial_distribution<int16_t>(512, 0.9999999));
 
     std::uniform_int_distribution<> uniform(1, 10000);
