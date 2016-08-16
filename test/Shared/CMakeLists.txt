@@ -5,7 +5,6 @@ set(CPPFILES
     EmptyTermTable.cpp
     MockFileManager.cpp
     MockTermTable.cpp
-#    PrivateHeapAllocator.cpp
 )
 
 set(PRIVATE_HFILES
@@ -16,7 +15,6 @@ set(PUBLIC_HFILES
     EmptyTermTable.h
     MockFileManager.h
     MockTermTable.h
-#    PrivateHeapAllocator.h
 )
 
 COMBINE_FILE_LISTS()
