@@ -7,7 +7,7 @@
 
 namespace BitFunnel
 {
-    class PrivateHeapAllocator : public Allocators::IAllocator
+    class PrivateHeapAllocator : public IAllocator
     {
     public:
         // constructor
@@ -36,7 +36,7 @@ namespace BitFunnel
     };
 
 
-    class PrivateHeapAllocatorFactory : public Allocators::IAllocatorFactory
+    class PrivateHeapAllocatorFactory : public IAllocatorFactory
     {
     public:
         ~PrivateHeapAllocatorFactory();
@@ -48,12 +48,12 @@ namespace BitFunnel
         // Returns an allocator from m_freeAllocators if any are available.
         // Otherwise, creates and returns a new allocator. This method is
         // threadsafe.
-        Allocators::IAllocator& CreateAllocator();
+        IAllocator& CreateAllocator();
 
         // Returns an allocator to m_freeAllocators. Note that allocators are
         // not actually deleted until this class' destructor is called.
         // This method is threadsafe.
-        void ReleaseAllocator(Allocators::IAllocator& allocator);
+        void ReleaseAllocator(IAllocator& allocator);
 
     private:
         // m_lock protects multithreaded access to m_freeAllocators.
@@ -63,7 +63,7 @@ namespace BitFunnel
         // to the factory via the ReleaseAllocator() method. CreateAllocator()
         // always attempts to reuse an allocator from m_freeAllocators before
         // creating a new one.
-        std::vector<Allocators::IAllocator*> m_freeAllocators;
+        std::vector<IAllocator*> m_freeAllocators;
 
     };
 }

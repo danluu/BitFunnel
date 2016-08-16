@@ -77,24 +77,24 @@ namespace BitFunnel
     }
 
 
-    Allocators::IAllocator& PrivateHeapAllocatorFactory::CreateAllocator()
+    IAllocator& PrivateHeapAllocatorFactory::CreateAllocator()
     {
         std::lock_guard<std::mutex> lock(m_mutex);
         if (m_freeAllocators.size() > 0)
         {
-            Allocators::IAllocator* allocator = m_freeAllocators.back();
+            IAllocator* allocator = m_freeAllocators.back();
             m_freeAllocators.pop_back();
             return *allocator;
         }
         else
         {
-            Allocators::IAllocator* allocator = new PrivateHeapAllocator();
+            IAllocator* allocator = new PrivateHeapAllocator();
             return *allocator;
         }
     }
 
 
-    void PrivateHeapAllocatorFactory::ReleaseAllocator(Allocators::IAllocator& allocator)
+    void PrivateHeapAllocatorFactory::ReleaseAllocator(IAllocator& allocator)
     {
         LockGuard lockGuard(m_lock);
         m_freeAllocators.push_back(&allocator);
