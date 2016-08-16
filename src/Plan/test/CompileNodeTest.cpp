@@ -338,10 +338,10 @@ namespace BitFunnel
             TextObjectFormatter formatter(output);
             node.Format(formatter);
 
-            //std::cout << "\"" << text << "\"" << std::endl;
-            //std::cout << "\"" << output.str() << "\"" << std::endl;
+            // std::cout << "\"" << text << "\"" << std::endl;
+            // std::cout << "\"" << output.str() << "\"" << std::endl;
 
-            EXPECT_EQ(text, output.str().c_str());
+            EXPECT_EQ(text, output.str());
         }
 
 
@@ -379,7 +379,7 @@ namespace BitFunnel
             //std::cout << "+++" << std::endl;
             //std::cout << "\"" << output.str() << "\"" << std::endl;
 
-            EXPECT_EQ(testCase.m_output, output.str().c_str());
+            EXPECT_EQ(testCase.m_output, output.str());
         }
 
 
