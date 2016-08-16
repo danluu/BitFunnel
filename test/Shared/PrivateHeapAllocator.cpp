@@ -1,3 +1,11 @@
+// Use Heap* functions on Windows and mmap otherwise.
+#ifdef BITFUNNEL_PLATFORM_WINDOWS
+#include <windows.h>
+#else
+#include <sys/mman.h>
+#endif
+
+
 #include <mutex>
 #include <new>
 
@@ -29,6 +37,19 @@ namespace BitFunnel
             HeapDestroy(m_heap);
         }
     }
+
+#ifdef BITFUNNEL_PLATFORM_WINDOWS
+    HANDLE AllocatorHelper(size_t size)
+    {
+        return HeapCreate(0, size, 0);
+    }
+#else
+    void* AllocatorHelper(size_t size)
+#endif
+    {
+
+    }
+
 
 
     // Free memory and recycle the heap so it can be reused
@@ -96,7 +117,7 @@ namespace BitFunnel
 
     void PrivateHeapAllocatorFactory::ReleaseAllocator(IAllocator& allocator)
     {
-        LockGuard lockGuard(m_lock);
+        std::lock_guard lock(m_mutex);
         m_freeAllocators.push_back(&allocator);
     }
 }

@@ -1,5 +1,10 @@
 #pragma once
 
+// Use Heap* functions on Windows and mmap otherwise.
+#ifdef BITFUNNEL_PLATFORM_WINDOWS
+#include <windows.h>
+#endif
+
 #include <vector>
 
 #include "BitFunnel/Allocators/IAllocator.h"
@@ -7,7 +12,7 @@
 
 namespace BitFunnel
 {
-    class PrivateHeapAllocator : public IAllocator
+    class PrivateHeapAllocator : public Allocators::IAllocator
     {
     public:
         // constructor
@@ -30,13 +35,23 @@ namespace BitFunnel
         size_t MaxSize() const;
 
     private:
+#ifdef BITFUNNEL_PLATFORM_WINDOWS
+        HANDLE AllocatorHelper(size_t size);
+#else
+        void* AllocatorHelper(size_t size);
+#endif
+
+#ifdef BITFUNNEL_PLATFORM_WINDOWS
         // handle to the kernel heap
         HANDLE m_heap;
+#else
+        void* m_heap;
+#endif
         size_t m_minBuffer;
     };
 
 
-    class PrivateHeapAllocatorFactory : public IAllocatorFactory
+    class PrivateHeapAllocatorFactory : public Allocators::IAllocatorFactory
     {
     public:
         ~PrivateHeapAllocatorFactory();
@@ -48,14 +63,15 @@ namespace BitFunnel
         // Returns an allocator from m_freeAllocators if any are available.
         // Otherwise, creates and returns a new allocator. This method is
         // threadsafe.
-        IAllocator& CreateAllocator();
+        Allocators::IAllocator& CreateAllocator();
 
         // Returns an allocator to m_freeAllocators. Note that allocators are
         // not actually deleted until this class' destructor is called.
         // This method is threadsafe.
-        void ReleaseAllocator(IAllocator& allocator);
+        void ReleaseAllocator(Allocators::IAllocator& allocator);
 
     private:
+
         // m_lock protects multithreaded access to m_freeAllocators.
         std::mutex m_mutex;
 
@@ -63,7 +79,7 @@ namespace BitFunnel
         // to the factory via the ReleaseAllocator() method. CreateAllocator()
         // always attempts to reuse an allocator from m_freeAllocators before
         // creating a new one.
-        std::vector<IAllocator*> m_freeAllocators;
+        std::vector<Allocators::IAllocator*> m_freeAllocators;
 
     };
 }
