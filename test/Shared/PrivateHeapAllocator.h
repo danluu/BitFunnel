@@ -1,12 +1,9 @@
 #pragma once
 
 #include <vector>
-#include <windows.h>
 
-#include "BitFunnelAllocatorInterfaces/IAllocator.h"
-#include "BitFunnelAllocatorInterfaces/IAllocatorFactory.h"
-#include "Mutex.h"
-
+#include "BitFunnel/Allocators/IAllocator.h"
+#include "BitFunnel/Allocators/IAllocatorFactory.h"
 
 namespace BitFunnel
 {
@@ -22,11 +19,11 @@ namespace BitFunnel
 
         // Free memory and recycle the heap so it can be reused
         void Reset();
-        
+
         // Allocate a block of memory of specified size from an heap allocator,
         // or from overflow allocator if the size is greater than maxArenaAlloc.
         void* Allocate(size_t size);
-        
+
         // "Free" memory allocated by the allocator.
         void Deallocate(void* p);
 
@@ -60,7 +57,7 @@ namespace BitFunnel
 
     private:
         // m_lock protects multithreaded access to m_freeAllocators.
-        Mutex m_lock;
+        std::mutex m_mutex;
 
         // m_freeAllocators is a vector of allocators that have been returned
         // to the factory via the ReleaseAllocator() method. CreateAllocator()
@@ -70,5 +67,3 @@ namespace BitFunnel
 
     };
 }
-
-

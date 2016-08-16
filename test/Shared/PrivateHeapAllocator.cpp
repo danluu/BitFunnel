@@ -1,11 +1,8 @@
-#include "stdafx.h"
-
+#include <mutex>
 #include <new>
 
 #include "PrivateHeapAllocator.h"
-#include "LockGuard.h"
 #include "LoggerInterfaces/Logging.h"
-
 
 namespace BitFunnel
 {
@@ -43,7 +40,7 @@ namespace BitFunnel
         }
         m_heap = HeapCreate(0, m_minBuffer, 0);
     }
-    
+
 
     // Allocate a block of memory of specified size from an heap allocator,
     // or from overflow allocator if the size is greater than maxArenaAlloc.
@@ -82,7 +79,7 @@ namespace BitFunnel
 
     Allocators::IAllocator& PrivateHeapAllocatorFactory::CreateAllocator()
     {
-        LockGuard lockGuard(m_lock);
+        std::lock_guard<std::mutex> lock(m_mutex);
         if (m_freeAllocators.size() > 0)
         {
             Allocators::IAllocator* allocator = m_freeAllocators.back();
