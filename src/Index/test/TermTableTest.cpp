@@ -68,7 +68,7 @@ namespace BitFunnel
 
             // Finish configuring the TermTable.
             termTable.SetRowCounts(0, explicitRowCount, adhocRowCount);
-            termTable.SetFactCount(0);
+            termTable.SetFactCount(0); // TODO: add a couple of facts.
             termTable.Seal();
 
             // Verify rows for each of the terms.
