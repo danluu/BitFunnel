@@ -70,5 +70,7 @@ namespace BitFunnel
         // Make the document visible to matcher. Must be called after the
         // document's content is fully ingested.
         void Activate();
+
+        static DocumentHandle CreateDocumentHandle(Slice* slice, DocIndex index);
     };
 }

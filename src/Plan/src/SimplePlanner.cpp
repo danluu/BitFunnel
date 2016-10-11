@@ -1,6 +1,7 @@
 #include <algorithm>    // std::sort()
 #include <iostream>
 
+#include "BitFunnel/Index/DocumentHandle.h"
 #include "BitFunnel/Index/IIngestor.h"
 #include "BitFunnel/Index/IShard.h"
 #include "BitFunnel/Index/ISimpleIndex.h"
@@ -39,7 +40,9 @@ namespace BitFunnel
             {
                 if (acc & 1)
                 {
-                    m_matches.push_back(offset * 64 + bitPos);
+                    const DocIndex docIndex = offset * 64 + bitPos;
+                    DocumentHandle(index);
+                    m_matches.push_back();
                 }
                 acc >>= 1;
                 ++bitPos;

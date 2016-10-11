@@ -25,6 +25,7 @@
 #include <limits>
 
 #include "BitFunnel/BitFunnelTypes.h"               // DocIndex member, DocId return value.
+#include "BitFunnel/Index/Factories.h"              // For friending DocHandle Factory.
 #include "BitFunnel/Index/IDocumentDataSchema.h"    // VariableSizeBlobId and FixedSizeBlobId parameters.
 #include "BitFunnel/Index/IFactSet.h"               // FactHandle parameter.
 #include "BitFunnel/Index/RowId.h"                  // RowId parameter.
