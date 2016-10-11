@@ -120,6 +120,7 @@ namespace BitFunnel
 #ifdef _MSC_VER
         return _bittest64(row + offset, bitPos);
 #else
+        // TODO: benchmark this vs. btc instruction.
         uint64_t bitMask = 1ull << bitPos;
         uint64_t maskedVal = *(row + offset) & bitMask;
         return maskedVal;
@@ -137,12 +138,14 @@ namespace BitFunnel
         const size_t offset = QwordPositionFromDocIndex(docIndex);
         uint64_t bitPos = docIndex & 0x3F;
 
+
 #ifdef _MSC_VER
         _interlockedbittestandset64(row + offset, bitPos);
 #else
-        uint64_t bitMask = 1ull << bitPos;
-        uint64_t newVal = *(row + offset) | bitMask;
-        *(row + offset) = newVal;
+        asm("lock bts %0, %1" : "+m" (*(row + offset)) : "r" (bitPos));
+        // uint64_t bitMask = 1ull << bitPos;
+        // uint64_t newVal = *(row + offset) | bitMask;
+        // *(row + offset) = newVal;
 #endif
     }
 
