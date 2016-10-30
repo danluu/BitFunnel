@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#include <iostream> // TODO: remove.
+
 #include <cstring>
 
 #include "BitFunnel/Index/ITermTable.h"
@@ -214,7 +216,7 @@ namespace BitFunnel
         RowTableDescriptor::GetRowData(void const * sliceBuffer,
                                        RowIndex rowIndex) const
     {
-        char const * rowData = 
+        char const * rowData =
             reinterpret_cast<char const *>(sliceBuffer) +
             GetRowOffset(rowIndex);
         return reinterpret_cast<uint64_t const *>(rowData);

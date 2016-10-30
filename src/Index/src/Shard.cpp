@@ -20,6 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#include <iostream> // TODO: remove.
+// #include <csignal>  // TODO: remove this temporary include.
+
 #include "BitFunnel/Exceptions.h"
 #include "BitFunnel/Index/IRecycler.h"
 #include "BitFunnel/Index/ISliceBufferAllocator.h"
@@ -99,6 +102,106 @@ namespace BitFunnel
 
         LogAssertB(bufferSize <= sliceBufferSize,
                    "Shard sliceBufferSize too small.");
+
+        // TODO: remove.
+m_debugHashes.insert(6802403625713157731ull);
+m_debugHashes.insert(1892876676525370225ull);
+m_debugHashes.insert(10268444040767430083ull);
+m_debugHashes.insert(15062712965704030892ull);
+m_debugHashes.insert(11753912564081085036ull);
+m_debugHashes.insert(14821544247608978427ull);
+m_debugHashes.insert(13964518420579998636ull);
+m_debugHashes.insert(6124212643376659348ull);
+m_debugHashes.insert(914910887621025089ull);
+m_debugHashes.insert(4794242573319645915ull);
+m_debugHashes.insert(15712799156545103138ull);
+m_debugHashes.insert(10215337536302442830ull);
+m_debugHashes.insert(12585621973702744924ull);
+m_debugHashes.insert(12504057022468599532ull);
+m_debugHashes.insert(1608043617621884185ull);
+m_debugHashes.insert(4454023814546111243ull);
+m_debugHashes.insert(8123696774011221762ull);
+m_debugHashes.insert(15813272355341469267ull);
+m_debugHashes.insert(1215313345411194885ull);
+m_debugHashes.insert(3605943695919173516ull);
+m_debugHashes.insert(4371210745611891803ull);
+m_debugHashes.insert(3304781985039740734ull);
+m_debugHashes.insert(4855692728433604921ull);
+m_debugHashes.insert(10699569182950920159ull);
+m_debugHashes.insert(8177603636405305729ull);
+m_debugHashes.insert(6001822067245432821ull);
+m_debugHashes.insert(12690678692941055581ull);
+m_debugHashes.insert(11380158788729432162ull);
+m_debugHashes.insert(330592983594565267ull);
+m_debugHashes.insert(11325442832764730472ull);
+m_debugHashes.insert(18267044777185742443ull);
+m_debugHashes.insert(16255320760065900224ull);
+m_debugHashes.insert(6583896268658057170ull);
+m_debugHashes.insert(16114529008645340669ull);
+m_debugHashes.insert(2126238523222934849ull);
+m_debugHashes.insert(13455127305354058956ull);
+m_debugHashes.insert(3282257373824034725ull);
+m_debugHashes.insert(5659987003778804210ull);
+m_debugHashes.insert(18278812507254872425ull);
+m_debugHashes.insert(4164039676279802188ull);
+m_debugHashes.insert(14729838783151667390ull);
+m_debugHashes.insert(12315007937642784254ull);
+m_debugHashes.insert(6870238875005365621ull);
+m_debugHashes.insert(16161649087628426011ull);
+m_debugHashes.insert(3757761778539672197ull);
+m_debugHashes.insert(6834420336083636529ull);
+m_debugHashes.insert(7161822144704913047ull);
+m_debugHashes.insert(12428861314277401021ull);
+m_debugHashes.insert(15255172139633144326ull);
+m_debugHashes.insert(12148345934830040355ull);
+m_debugHashes.insert(2204779787102981792ull);
+m_debugHashes.insert(8376626533906817607ull);
+m_debugHashes.insert(11450496932616727138ull);
+m_debugHashes.insert(426408076495712027ull);
+m_debugHashes.insert(11893184868545713857ull);
+m_debugHashes.insert(17812411437748600875ull);
+m_debugHashes.insert(872384601400798954ull);
+m_debugHashes.insert(649571173582214068ull);
+m_debugHashes.insert(5565201803567081604ull);
+m_debugHashes.insert(13605386290718159884ull);
+m_debugHashes.insert(11389444975272226173ull);
+m_debugHashes.insert(16176740567682931522ull);
+m_debugHashes.insert(9492949731866586522ull);
+m_debugHashes.insert(12936178928238637432ull);
+m_debugHashes.insert(9064588680764107159ull);
+m_debugHashes.insert(11373659223552308932ull);
+m_debugHashes.insert(10279857485235489520ull);
+m_debugHashes.insert(3729386093914958526ull);
+m_debugHashes.insert(9121661949955867821ull);
+m_debugHashes.insert(672002584644571710ull);
+m_debugHashes.insert(8259394038600795233ull);
+m_debugHashes.insert(7995223337546059673ull);
+m_debugHashes.insert(5678811791139835946ull);
+m_debugHashes.insert(11339003623108308853ull);
+m_debugHashes.insert(8040475089725963666ull);
+m_debugHashes.insert(10885105889257259779ull);
+m_debugHashes.insert(3456830556196710792ull);
+m_debugHashes.insert(16043815791259890075ull);
+m_debugHashes.insert(16553332868278569647ull);
+m_debugHashes.insert(8968418980549040001ull);
+m_debugHashes.insert(12964489370711543558ull);
+m_debugHashes.insert(14074731845020147085ull);
+m_debugHashes.insert(6470571244136123651ull);
+m_debugHashes.insert(1649805913259356034ull);
+m_debugHashes.insert(1797909131085410441ull);
+m_debugHashes.insert(9280042094497414014ull);
+m_debugHashes.insert(1136768615164013330ull);
+m_debugHashes.insert(1980843537680751173ull);
+m_debugHashes.insert(8743673518708663979ull);
+m_debugHashes.insert(13984754940461205902ull);
+m_debugHashes.insert(10391908053915065010ull);
+m_debugHashes.insert(8098480200733053997ull);
+m_debugHashes.insert(12458657556968019632ull);
+m_debugHashes.insert(690372461770882916ull);
+m_debugHashes.insert(9187759113413641805ull);
+m_debugHashes.insert(1254922003706760101ull);
+m_debugHashes.insert(2540519198840781926ull);
+ m_triggered = false;
     }
 
 
@@ -357,10 +460,54 @@ namespace BitFunnel
         }
 
 
+        // if (m_debugHashes.find(term.GetRawHash()) != m_debugHashes.end())
+        // {
+        //     if (!m_triggered)
+        //     {
+        //         m_triggered = true;
+        //         std::raise(SIGINT);
+        //     }
+        // }
         RowIdSequence rows(term, m_termTable);
 
         for (auto const row : rows)
         {
+            bool alreadySet =
+                m_rowTables[row.GetRank()].GetBit(sliceBuffer,
+                                                  row.GetIndex(),
+                                                  index);
+            if (m_debugHashes.find(term.GetRawHash()) != m_debugHashes.end() &&
+                row.GetRank() == 0u)
+            {
+                if (!m_triggered)
+                {
+                    m_triggered = true;
+                    // std::raise(SIGINT);
+                }
+                // // Need some lock to avoid output mangling. Using this one because it's handy.
+                // std::lock_guard<std::mutex> lock(m_temporaryFrequencyTableMutex);
+                // std::cout << row.GetIndex()
+                //           << ","
+                //           << index
+                //           << ",good,"
+                //           << alreadySet
+                //           << ","
+                //           << term.GetRawHash()
+                //           << std::endl;
+            }
+            else if (row.GetIndex() == 6221 && row.GetRank() == 0)
+            {
+                // Need some lock to avoid output mangling. Using this one because it's handy.
+                std::lock_guard<std::mutex> lock(m_temporaryFrequencyTableMutex);
+                std::cout << row.GetIndex()
+                          << ","
+                          << index
+                          << ",bad,"
+                          << alreadySet
+                          << ","
+                          << term.GetRawHash()
+                          << std::endl;
+            }
             m_rowTables[row.GetRank()].SetBit(sliceBuffer,
                                               row.GetIndex(),
                                               index);

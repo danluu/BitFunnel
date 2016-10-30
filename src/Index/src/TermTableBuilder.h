@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <iostream>  // TODO: remove.
+
 #include <iosfwd>                               // std::ostream parameter.
 #include <iterator>                             // typedef uses std::back_inserter_iterator.
 #include <map>                                  // std::map member.
@@ -154,6 +156,14 @@ namespace BitFunnel
                     : m_availableSpace(density - frequency),
                       m_index(index)
                 {
+                    // if (GetIndex() > 5210 && GetIndex() < 5222)
+                    // {
+                    //     std::cout << "Bin "
+                    //               << GetIndex()
+                    //               << " CONSTRUCTOR!!! "
+                    //               << m_availableSpace
+                    //               << std::endl;
+                    // }
                 }
 
                 Bin(double frequency)
@@ -163,6 +173,14 @@ namespace BitFunnel
 
                 double GetAvailableSpace() const
                 {
+                    // if (GetIndex() > 5210 && GetIndex() < 5222)
+                    // {
+                    //     std::cout << "Bin "
+                    //               << GetIndex()
+                    //               << " GetAvailableSpace "
+                    //               << m_availableSpace
+                    //               << std::endl;
+                    // }
                     return m_availableSpace;
                 }
 
@@ -178,8 +196,30 @@ namespace BitFunnel
 
                 void Reserve(double frequency)
                 {
-                    // TODO: check for overflow.
+                    // // TODO: check for overflow.
+                    // double originalSpace = m_availableSpace;
                     m_availableSpace -= frequency;
+                    // // TODO: remove debug output.
+                    // if (originalSpace == m_availableSpace && frequency != 0.0)
+                    // {
+                    //     std::cout << "Bin "
+                    //               << GetIndex()
+                    //               << " floating point rounding error"
+                    //               << m_availableSpace
+                    //               << ":"
+                    //               << frequency
+                    //               << std::endl;
+                    // }
+                    // // if (GetIndex() > 5210 && GetIndex() < 5222)
+                    // // {
+                    //     std::cout << "Bin "
+                    //               << GetIndex()
+                    //               << " reserve "
+                    //               << m_availableSpace
+                    //               << ":"
+                    //               << frequency
+                    //               << std::endl;
+                    //     //}
                 }
 
                 bool operator<(Bin const & other) const

@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#include <csignal>  // TODO: remove this temporary include.
+
 #include <algorithm>
 #include <iostream>     // TODO: Remove this temporary include.
 #include <math.h>
@@ -98,8 +100,20 @@ namespace BitFunnel
             //dfEntry.GetTerm().Print(std::cout);
             //std::cout << "; frequency = " << dfEntry.GetFrequency() << std::endl;
 
-            // Get the term's RowConfiguration.
+            // Get the term's RowConfigursation.
             auto configuration = treatment.GetTreatment(dfEntry.GetTerm());
+
+            // TODO: remove debug breakpoint insertion.
+            if (dfEntry.GetTerm().GetRawHash() == 0xd10981a2fa759aac || // phallus: 20 true positives
+                dfEntry.GetTerm().GetRawHash() == 0x7c76398bcc7f1781) // reversions: 4 true positives
+            {
+                std::cout << "------MAGIC TERM "
+                          << std::hex
+                          << dfEntry.GetTerm().GetRawHash()
+                          << std::dec
+                          << std::endl;
+                // std::raise(SIGINT);
+            }
 
             if (dfEntry.GetFrequency() < adhocFrequency)
             {
@@ -191,6 +205,11 @@ namespace BitFunnel
             m_termTable.SetRowCounts(rank,
                                      m_rowAssigners[rank]->GetExplicitRowCount(),
                                      adhocRowCount);
+
+            std::cout << "SetRowCounts" << std::endl
+                      << "rank " << rank << std::endl
+                      << "explicit " << m_rowAssigners[rank]->GetExplicitRowCount() << std::endl
+                      << "adhoc " << adhocRowCount << std::endl;
         }
 
         m_termTable.SetFactCount(facts.GetCount());
@@ -339,6 +358,8 @@ namespace BitFunnel
             {
                 // TODO: figure out ShardId value here.
                 m_termTable.AddRowId(RowId(m_rank, b.GetIndex()));
+                // TODO: remove.
+                // std::cout << m_rank << "," << b.GetIndex() << std::endl;
             }
 
             // Reinsert the bins into m_bins.

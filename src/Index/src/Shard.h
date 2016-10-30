@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <unordered_set>  // TODO:remove.
 
 #include <memory>                           // std::unique_ptr member.
 #include <ostream>                          // TODO: Remove this temporary include.
@@ -317,5 +318,8 @@ namespace BitFunnel
 
         std::unique_ptr<DocumentFrequencyTableBuilder> m_docFrequencyTableBuilder;
         std::mutex m_temporaryFrequencyTableMutex;
+
+        std::unordered_set<uint64_t> m_debugHashes; // TODO: remove.
+        bool m_triggered; // TODO: remove.
     };
 }

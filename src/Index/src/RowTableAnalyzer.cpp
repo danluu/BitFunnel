@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#include <iostream> // TODO: remove.
 
 #include <ostream>
 #include <stack>
@@ -122,6 +123,10 @@ namespace BitFunnel
         // Use CsvTableFormatter to escape terms that contain commas and quotes.
         CsvTsv::CsvTableFormatter formatter(out);
 
+        // TODO: remove.
+        const size_t specialRowId = 6221;
+        CsvTsv::CsvTableFormatter specialFormatter(std::cout);
+
         for (auto dfEntry : *terms)
         {
             Term term = dfEntry.GetTerm();
@@ -143,6 +148,13 @@ namespace BitFunnel
                 out << row.GetRank();
                 formatter.WriteField(row.GetIndex());
                 formatter.WriteField(densities[row.GetRank()][row.GetIndex()]);
+
+                if (row.GetIndex() == specialRowId && row.GetRank() == 0)
+                {
+                    specialFormatter.WriteField(termToText.Lookup(term.GetRawHash()));
+                    specialFormatter.WriteField(dfEntry.GetTerm().GetRawHash());
+                    specialFormatter.WriteRowEnd();
+                }
 
                 rowsReversed.pop();
             }
