@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+// #include <csignal>  // TODO: remove debugging aid.
 #include <math.h>
 #include <sstream>
 
@@ -172,6 +173,10 @@ namespace BitFunnel
     {
         EnsureSealed(false);
         // NOTE: we don't EnsureTermOpen because we could add system rows via AddRowId.
+        // if (row.GetRank() == 4u)
+        // {
+            // std::raise(SIGINT);
+        // }
         m_ranksInUse[row.GetRank()] = true;
         m_rowIds.push_back(row);
     }
