@@ -358,8 +358,9 @@ namespace BitFunnel
         {
             // TODO: Need a blockSize that works for all term tables.
             const ShardId tempId = 0;
+            // TODO: figure out how we should figure out blockSize. We multiply the minimum block size by an arbitrary number so that we don't get tiny (64 document) slices.
             const size_t blockSize =
-                GetMinimumBlockSize(*m_schema, m_termTables->GetTermTable(tempId));
+                GetMinimumBlockSize(*m_schema, m_termTables->GetTermTable(tempId)) * 512;
             //        std::cout << "Blocksize: " << blockSize << std::endl;
 
             const size_t initialBlockCount = 512;
