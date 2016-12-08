@@ -55,6 +55,10 @@ namespace BitFunnel
         // Returns the offset of the row in the slice buffer in a shard.
         virtual ptrdiff_t GetRowOffset(RowId rowId) const = 0;
 
+        virtual void DisableStatistics() = 0;
+
+        virtual void EnableStatistics() = 0;
+
         virtual void TemporaryWriteDocumentFrequencyTable(
             std::ostream& out,
             ITermToText const * termToText) const = 0;

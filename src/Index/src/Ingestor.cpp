@@ -68,7 +68,8 @@ namespace BitFunnel
           m_documentMap(new DocumentMap()),
           m_documentCache(new DocumentCache()),
           m_tokenManager(Factories::CreateTokenManager()),
-          m_sliceBufferAllocator(sliceBufferAllocator)
+          m_sliceBufferAllocator(sliceBufferAllocator),
+          m_collectStatistics(false)
     {
         // Create shards based on shard definition in m_shardDefinition..
         for (ShardId shardId = 0; shardId < m_shardDefinition.GetShardCount(); ++shardId)
@@ -89,6 +90,26 @@ namespace BitFunnel
     Ingestor::~Ingestor()
     {
         Shutdown();
+    }
+
+
+    void Ingestor::DisableStatistics()
+    {
+        m_collectStatistics = false;
+        for (size_t shard = 0; shard < m_shards.size(); ++shard)
+        {
+            m_shards[shard]->DisableStatistics();
+        }
+    }
+
+
+    void Ingestor::EnableStatistics()
+    {
+        m_collectStatistics = true;
+        for (size_t shard = 0; shard < m_shards.size(); ++shard)
+        {
+            m_shards[shard]->EnableStatistics();
+        }
     }
 
 
@@ -149,6 +170,7 @@ namespace BitFunnel
         m_totalSourceByteSize += document.GetSourceByteSize();
 
         // Add postingCount to the DocumentHistogramBuilder
+        // TODO: shouldn't we only do this if we're collecting statistics?
         m_histogram.AddDocument(document.GetPostingCount());
 
         // Choose correct shard and then allocate handle.

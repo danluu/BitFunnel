@@ -88,8 +88,8 @@ namespace BitFunnel
                                                  docDataSchema,
                                                  termTable)),
           m_sliceBufferSize(sliceBufferSize),
-          // TODO: will need one global, not one per shard.
-          m_docFrequencyTableBuilder(new DocumentFrequencyTableBuilder())
+          m_docFrequencyTableBuilder(new DocumentFrequencyTableBuilder()),
+          m_collectStatistics(false)
     {
         const size_t bufferSize =
             InitializeDescriptors(this,
@@ -413,9 +413,21 @@ namespace BitFunnel
     }
 
 
+    void Shard::DisableStatistics()
+    {
+        m_collectStatistics = false;
+    }
+
+
+    void Shard::EnableStatistics()
+    {
+        m_collectStatistics = true;
+    }
+
+
     void Shard::TemporaryRecordDocument()
     {
-        if (m_docFrequencyTableBuilder.get() != nullptr)
+        if (m_collectStatistics)
         {
             m_docFrequencyTableBuilder->OnDocumentEnter();
         }
@@ -426,7 +438,7 @@ namespace BitFunnel
                                                      ITermToText const * termToText) const
     {
         // TODO: 0.0 is the truncation frequency, which shouldn't be fixed at 0.
-        if (m_docFrequencyTableBuilder.get() != nullptr)
+        if (m_collectStatistics)
         {
             m_docFrequencyTableBuilder->WriteFrequencies(out, 0.0, termToText);
         }
@@ -436,7 +448,7 @@ namespace BitFunnel
     void Shard::TemporaryWriteIndexedIdfTable(std::ostream& out) const
     {
         // TODO: 0.0 is the truncation frequency, which shouldn't be fixed at 0.
-        if (m_docFrequencyTableBuilder.get() != nullptr)
+        if (m_collectStatistics)
         {
             m_docFrequencyTableBuilder->WriteIndexedIdfTable(out, 0.0);
         }
@@ -445,7 +457,7 @@ namespace BitFunnel
 
     void Shard::TemporaryWriteCumulativeTermCounts(std::ostream& out) const
     {
-        if (m_docFrequencyTableBuilder.get() != nullptr)
+        if (m_collectStatistics)
         {
             m_docFrequencyTableBuilder->WriteCumulativeTermCounts(out);
         }

@@ -57,6 +57,10 @@ namespace BitFunnel
 
         virtual ~Ingestor();
 
+        virtual void DisableStatistics() override;
+
+        virtual void EnableStatistics() override;
+
         // TODO: Remove this temporary method.
         virtual void PrintStatistics(std::ostream& out) const override;
 
@@ -188,5 +192,7 @@ namespace BitFunnel
         // blocks of the same byte size. Slices within Shards will choose the
         // capacity for which the byte size of the buffer is sufficient.
         ISliceBufferAllocator& m_sliceBufferAllocator;
+
+        bool m_collectStatistics;
     };
 }

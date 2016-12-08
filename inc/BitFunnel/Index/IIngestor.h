@@ -64,6 +64,10 @@ namespace BitFunnel
     class IIngestor : public IInterface
     {
     public:
+        virtual void DisableStatistics() = 0;
+
+        virtual void EnableStatistics() = 0;
+
         // TODO: Remove this temporary method.
         virtual void PrintStatistics(std::ostream& out) const = 0;
 
