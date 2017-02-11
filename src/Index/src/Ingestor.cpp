@@ -164,12 +164,12 @@ namespace BitFunnel
         ShardId shardId = m_shardDefinition.GetShard(document.GetPostingCount());
         DocumentHandleInternal handle = m_shards[shardId]->AllocateDocument(id);
 
-        //std::cout
-        //    << "IIngestor::Add("
-        //    << id << "): "
-        //    << handle.GetIndex() << ", "
-        //    << std::hex << handle.GetSlice() << std::dec
-        //    << std::endl;
+        std::cout
+           << "IIngestor::Add("
+           << id << "):"
+           << " postingCount: " << document.GetPostingCount()
+           << " shardId: " << shardId
+           << std::endl;
 
         document.Ingest(handle);
 
